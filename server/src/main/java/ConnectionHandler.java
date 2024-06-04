@@ -13,11 +13,11 @@ import java.util.function.BiConsumer;
 @Getter
 public class ConnectionHandler {
 
-    private Thread connectionThread;
     private final Socket currentSocket;
     private final BiConsumer<Request, ConnectionHandler> onNewMessageLambdaDefault;
 
     private final ObjectOutputStream objectOutputStream;
+    private final ObjectInputStream inputStream;
 
     @Setter
     public BiConsumer<ConnectionHandler, String> onClientDisconnected;
@@ -29,19 +29,12 @@ public class ConnectionHandler {
         onNewMessageLambdaDefault = onNewMessage;
         currentSocket = socket;
 
-        connectionThread = new Thread(runnableAcceptingLoop());
-        connectionThread.setDaemon(true);
-        connectionThread.start();
-
         try {
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            inputStream = new ObjectInputStream(getCurrentSocket().getInputStream());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public void stop() {
-        connectionThread.interrupt();
     }
 
     public void send(ServerResponse message) {
@@ -53,27 +46,19 @@ public class ConnectionHandler {
         }
     }
 
-    private Runnable runnableAcceptingLoop() {
-        return () -> {
-            String disconnectCause = "Thread stopped.";
 
-            try (ObjectInputStream inputStream = new ObjectInputStream(getCurrentSocket().getInputStream())) {
+    public Request readRequestBlocking() {
+        try {
+            Object obj = inputStream.readObject();
 
-                while (!connectionThread.isInterrupted()) {
-                    Object obj = inputStream.readObject();
-
-                    if (obj instanceof Request message) {
-                        onNewMessageLambdaDefault.accept(message, this);
-                    }
-                }
-
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                disconnectCause = e.getMessage();
-            } finally {
-                onClientDisconnected.accept(this, disconnectCause);
+            if (!(obj instanceof Request message)) {
+                throw new ClassNotFoundException("Wrong class!");
             }
-        };
+
+            return message;
+
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
