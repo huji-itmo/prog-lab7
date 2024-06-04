@@ -16,7 +16,7 @@ public class PrintDescendingCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
         String out = database.getElementsDescendingByPrimaryKey();
 
         if (out.isBlank()) {

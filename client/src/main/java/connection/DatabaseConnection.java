@@ -14,12 +14,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 @Getter
 public class DatabaseConnection {
     @Setter
-    long clientId;
+    String session = "0";
 
     private Socket socket;
 
@@ -93,11 +92,12 @@ public class DatabaseConnection {
 
     }
 
-    public void send(Request ok) {
+    public void sendRequest(Request ok) {
         try {
-            ok.setClientId(clientId);
+            ok.setSession(session);
             objectOutputStream.writeObject(ok);
             objectOutputStream.flush();
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -108,7 +108,7 @@ public class DatabaseConnection {
         oneShotRequest = true;
         try {
             synchronized (lock) {
-                send(ok);
+                sendRequest(ok);
                 lock.wait();
                 //notified when response came
                 oneShotRequest = false;

@@ -16,9 +16,9 @@ public class RemoveByIdCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
         try {
-            database.removeElementByPrimaryKey((Long) packedArgs.get(0));
+            database.removeElementByPrimaryKey((Long) packedArgs.get(0), session);
 
             return "Element is removed!";
         } catch (NumberFormatException | ClassCastException e) {

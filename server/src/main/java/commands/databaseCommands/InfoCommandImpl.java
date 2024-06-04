@@ -9,7 +9,7 @@ import java.util.List;
 public class InfoCommandImpl extends DatabaseCommandImpl {
     Database<?, ?> database;
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
         return database.getInfo();
     }
 

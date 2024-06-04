@@ -5,15 +5,14 @@ import commands.auth.RegisterCommandData;
 import commands.exceptions.CommandException;
 import dataStructs.communication.Request;
 import dataStructs.communication.ServerResponse;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-public class Client {
+public class ClientHandler {
 
     private Thread thread;
     private final ConnectionHandler handler;
@@ -23,13 +22,14 @@ public class Client {
     @Setter
     Function<Request, String> requestExecuteFunction;
     @Setter
-    Consumer<IOException> onThreadException;
+    BiConsumer<Exception, ClientHandler> onThreadException;
 
-    public Client(ConnectionHandler handler, Server server) {
+    public ClientHandler(ConnectionHandler handler, Server server) {
         this.handler = handler;
         this.server = server;
         thread = new Thread(getRunnable());
         thread.setDaemon(true);
+        thread.start();
     }
 
     private void setSession(String val) {
@@ -45,10 +45,12 @@ public class Client {
 
                 setSession(server.createNewSessionWithClientId(clientId));
 
+                handler.sendResponseBlocking(new ServerResponse(200, getSession()));
+
                 while (!thread.isInterrupted()) {
                     Request request = handler.readRequestBlocking();
 
-                    if (!request.getSession().equals(session)) {
+                    if (!request.getSession().equals(getSession())) {
                         handler.sendResponseBlocking(new ServerResponse(400, "Wrong session parameter. Sussy baka impostor"));
                         continue;
                     }
@@ -57,7 +59,7 @@ public class Client {
                 }
             } catch (IOException e) {
                 thread.interrupt();
-                onThreadException.accept(e);
+                onThreadException.accept(e, this);
             }
         };
     }

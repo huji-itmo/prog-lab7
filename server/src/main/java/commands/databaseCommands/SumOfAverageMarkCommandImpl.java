@@ -2,20 +2,20 @@ package commands.databaseCommands;
 
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
-import database.StudyGroupDatabaseInstance;
+import database.StudyGroupDatabase;
 
 import java.util.List;
 
 public class SumOfAverageMarkCommandImpl extends DatabaseCommandImpl {
-    private final StudyGroupDatabaseInstance database;
+    private final StudyGroupDatabase database;
 
-    public SumOfAverageMarkCommandImpl(StudyGroupDatabaseInstance database) {
+    public SumOfAverageMarkCommandImpl(StudyGroupDatabase database) {
         this.database = database;
         setCommandData(new SumOfAverageMarkCommandData());
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
 
         return Double.toString(database.getSumOfAverageMark());
     }

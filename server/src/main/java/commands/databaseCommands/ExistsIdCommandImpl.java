@@ -16,7 +16,7 @@ public class ExistsIdCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
         return Boolean.toString(database.existsById((Long) packedArgs.get(0)));
     }
 }

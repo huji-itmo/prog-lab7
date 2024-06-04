@@ -16,10 +16,10 @@ public class RemoveGreaterCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
 
         try {
-            long count = database.removeGreaterOrLowerThanPrimaryKey((Long) packedArgs.get(0), true).size();
+            long count = database.removeGreaterOrLowerThanPrimaryKey((Long) packedArgs.get(0), true, session).size();
 
             return "Removed " + count + " elements.";
 

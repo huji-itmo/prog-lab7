@@ -15,6 +15,7 @@ public class Request implements Serializable {
 
     List<Object> params;
 
+    @Setter
     String session;
 
     public Request(CommandData commandData, List<Object> params) {

@@ -7,8 +7,9 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Function;
 
-import database.StudyGroupDatabaseInstance;
+import database.StudyGroupDatabase;
 import org.hibernate.*;
 
 
@@ -26,21 +27,27 @@ public class ServerApplication {
 
         try {
             factory = HibernateSessionFactory.setupFactory(args[0]);
-            StudyGroupDatabaseInstance database = new StudyGroupDatabaseInstance(factory, collection);
 
-            implMap.addDatabaseCommands(database);
         } catch (IOException e) {
             System.err.println(e.getMessage());
             System.exit(-1);
         }
 
+
         Server server = new Server(5252);
         server.setExecuteRequest(ServerApplication::messageHandler);
+
+        Function<String, Long> sessionToLongFunction = (session) -> server.getSessionToClientIdMap().get(session);
+
+        StudyGroupDatabase database = new StudyGroupDatabase(factory, collection, sessionToLongFunction);
+
+        implMap.addDatabaseCommands(database);
+
 
         server.startClientAcceptingLoop();
     }
 
     public static String messageHandler(Request request) {
-        return implMap.map.get(request.getCommandData()).execute(request.getParams());
+        return implMap.map.get(request.getCommandData()).execute(request.getParams(), request.getSession());
     }
 }

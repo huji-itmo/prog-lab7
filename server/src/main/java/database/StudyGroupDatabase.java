@@ -4,10 +4,10 @@ import commands.exceptions.CommandException;
 import dataStructs.FormOfEducation;
 import dataStructs.StudyGroup;
 import dataStructs.User;
+import database.undo.UndoLog;
 import lombok.Getter;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.id.ForeignGenerator;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -20,106 +20,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Getter
-public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
+public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
     private final SessionFactory factory;
+    private final Function<String, Long> sessionToIdFunction;
 
-     Stack<UndoLog<StudyGroup>> undoLogStacksByClient = new Stack<>();
+    Map<Long, Stack<UndoLog<StudyGroup>>> undoLogStacksByClient = new HashMap<>();
 
     private final Collection<StudyGroup> collection;
 
-    @Override
-    public void clear() {
-        List<StudyGroup> deleted = List.copyOf(getCollection());
-
-        try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            deleted.forEach(session::delete);
-            session.getTransaction().commit();
-        }
-        getCollection().clear();
-
-        pushToUndoStack(UndoLog.deletedElements(deleted));
-    }
-
-    @Override
-    public Comparator<Long> getPrimaryKeyComparator() {
-        return Long::compareTo;
-    }
-
-    @Override
-    public Function<StudyGroup, Long> getPrimaryKey() {
-        return StudyGroup::getId;
-    }
-
-    @Override
-    public BiConsumer<StudyGroup, Long> setPrimaryKeyTo() {
-        return StudyGroup::setId;
-    }
-
-    @Override
-    public Class<StudyGroup> getElementClass() {
-        return StudyGroup.class;
-    }
-
-    @Override
-    public String getInfo() {
-
-        return "TODO";
-    }
-
-    @Override
-    public List<StudyGroup> removeGreaterOrLowerThanPrimaryKey(Long id, boolean greater) {
-
-
-        List<StudyGroup> toDelete = getCollection()
-                .stream()
-                .filter(studyGroup -> (studyGroup.getId() > id) == greater)
-                .toList();
-
-        try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            toDelete.forEach(session::delete);
-            session.getTransaction().commit();
-        }
-
-        pushToUndoStack(UndoLog.deletedElements(toDelete));
-
-        return toDelete;
-    }
-
-    @Override
-    public String getElementsDescendingByPrimaryKey() {
-        return getCollection().stream()
-                .sorted(Comparator.comparingLong(StudyGroup::getId))
-                .map(str -> str + "\n")
-                .collect(Collectors.joining());
-    }
-
-    @Override
-    public StudyGroup updateElementByPrimaryKey(Long id, StudyGroup new_element) throws IllegalArgumentException {
-        StudyGroup deleted = getCollection()
-                .stream()
-                .filter(studyGroup -> studyGroup.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Element with id: " + id + " doesn't exist."));
-
-        new_element.setId(id);
-
-        try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            session.merge(new_element);
-            session.getTransaction().commit();
-        }
-
-        pushToUndoStack(UndoLog.changedElement(new_element,deleted));
-
-        return deleted;
-    }
-
-    public StudyGroupDatabaseInstance(SessionFactory factory, Collection<StudyGroup> collection) {
+    public StudyGroupDatabase(SessionFactory factory, Collection<StudyGroup> collection, Function<String, Long> sessionToIdFunction) {
 
         this.collection = collection;
+        this.sessionToIdFunction = sessionToIdFunction;
 
         try (Session session = factory.openSession()) {
 
@@ -135,7 +48,83 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
     }
 
     @Override
-    public StudyGroup removeElementByPrimaryKey(Long id) throws IllegalArgumentException {
+    public String getInfo() {
+        //TODO: fill this
+        return "TODO";
+    }
+
+    @Override
+    public void clear(String sessionStr) {
+        Long clientId = sessionToIdFunction.apply(sessionStr);
+        boolean canClear = getCollection().stream().allMatch(studyGroup -> studyGroup.getOwner() == clientId);
+
+        if (!canClear) {
+            return;
+        }
+
+        List<StudyGroup> deleted = List.copyOf(getCollection());
+
+        try (Session session = factory.openSession()) {
+            session.beginTransaction();
+            deleted.forEach(session::delete);
+            session.getTransaction().commit();
+        }
+        getCollection().clear();
+
+        pushToUndoStack(UndoLog.deletedElements(deleted), sessionStr);
+    }
+
+    @Override
+    public List<StudyGroup> removeGreaterOrLowerThanPrimaryKey(Long id, boolean greater, String sessionStr) {
+        //TODO: Prompt to delete all that can or not (need to show what elements will not be deleted with their owners)
+
+        List<StudyGroup> toDelete = getCollection()
+                .stream()
+                .filter(studyGroup -> (studyGroup.getId() > id) == greater)
+                .toList();
+
+        try (Session session = factory.openSession()) {
+            session.beginTransaction();
+            toDelete.forEach(session::delete);
+            session.getTransaction().commit();
+        }
+
+        pushToUndoStack(UndoLog.deletedElements(toDelete), sessionStr);
+
+        return toDelete;
+    }
+
+    @Override
+    public String getElementsDescendingByPrimaryKey() {
+        return getCollection().stream()
+                .sorted(Comparator.comparingLong(StudyGroup::getId))
+                .map(str -> str + "\n")
+                .collect(Collectors.joining());
+    }
+
+    @Override
+    public StudyGroup updateElementByPrimaryKey(Long id, StudyGroup new_element, String sessionStr) throws IllegalArgumentException {
+        StudyGroup deleted = getCollection()
+                .stream()
+                .filter(studyGroup -> studyGroup.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Element with id: " + id + " doesn't exist."));
+
+        new_element.setId(id);
+
+        try (Session session = factory.openSession()) {
+            session.beginTransaction();
+            session.merge(new_element);
+            session.getTransaction().commit();
+        }
+
+        pushToUndoStack(UndoLog.changedElement(new_element,deleted), sessionStr);
+
+        return deleted;
+    }
+
+    @Override
+    public StudyGroup removeElementByPrimaryKey(Long id, String sessionStr) throws IllegalArgumentException {
         StudyGroup deleted = getCollection()
                 .stream()
                 .filter(studyGroup -> studyGroup.getId() == id)
@@ -149,13 +138,13 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
             session.getTransaction().commit();
         }
 
-        pushToUndoStack(UndoLog.deletedElements(deleted));
+        pushToUndoStack(UndoLog.deletedElements(deleted),sessionStr);
 
         return deleted;
     }
 
     @Override
-    public void addElement(StudyGroup group) {
+    public void addElement(StudyGroup group, String sessionStr) {
         getCollection().add(group);
 
         try (Session session = factory.openSession()) {
@@ -164,7 +153,7 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
             session.getTransaction().commit();
         }
 
-        pushToUndoStack(UndoLog.addedElements(group));
+        pushToUndoStack(UndoLog.addedElements(group), sessionStr);
     }
 
     @Override
@@ -176,16 +165,15 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
     }
 
     @Override
-    public void pushToUndoStack(UndoLog<StudyGroup> log) {
-        if (log.changesList.isEmpty()) {
+    public void pushToUndoStack(UndoLog<StudyGroup> log, String session) {
+        if (log.getChangesList().isEmpty()) {
             return;
         }
         System.out.println("added to stack " + log);
 
-        undoLogStacksByClient.push(log);
+        undoLogStacksByClient.get(sessionToIdFunction.apply(session)).push(log);
     }
 
-    @Override
     public boolean undo(UndoLog<StudyGroup> log) throws RuntimeException{
         if (undoLogStacksByClient.isEmpty())
             return false;
@@ -204,11 +192,11 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
         {
             EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
             session.beginTransaction();
-            log.changesList.forEach(change -> {
-                if (change.isAdded) {
-                    remover.accept(change.element, entityManager);
+            log.getChangesList().forEach(change -> {
+                if (change.isAdded()) {
+                    remover.accept(change.getElement(), entityManager);
                 } else {
-                    adder.accept(change.element, entityManager);
+                    adder.accept(change.getElement(), entityManager);
                 }
             });
 
@@ -242,6 +230,11 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
         }
     }
 
+    @Override
+    public boolean popUndoStackWithSession(String session) {
+        return false;
+    }
+
     public boolean checkAlreadyExistsUser(String userName) {
         try (Session session = factory.openSession()) {
             session.beginTransaction();
@@ -251,7 +244,7 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
             Root<User> root =query.from(User.class);
 
              query.select(root).where(builder.and(
-                    builder.equal(root.get("name"), userName)));
+                    builder.equal(root.get("user_name"), userName)));
 
              return !(session.createQuery(query).getResultList().isEmpty());
         }
@@ -266,8 +259,9 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
             Root<User> root =query.from(User.class);
 
             query.select(root).where(builder.and(
-                    builder.equal(root.get("name"), userName),
+                    builder.equal(root.get("user_name"), userName),
                     builder.equal(root.get("password"), password)));
+
 
 
             User user = entityManager.createQuery(query).getSingleResult();
@@ -278,7 +272,7 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
         }
     }
 
-    public OptionalInt getMinStudnentCount() {
+    public OptionalInt getMinStudentCount() {
         return getCollection()
                 .stream()
                 .filter(studyGroup -> studyGroup.getStudentsCount() != null)

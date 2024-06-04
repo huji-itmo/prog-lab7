@@ -4,22 +4,22 @@ import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
 import commands.exceptions.IllegalCommandSyntaxException;
 import dataStructs.FormOfEducation;
-import database.StudyGroupDatabaseInstance;
+import database.StudyGroupDatabase;
 
 import java.util.List;
 import java.util.Optional;
 
 public class CountLessThanFormOfEducationCommandImpl extends DatabaseCommandImpl {
 
-    private final StudyGroupDatabaseInstance database;
+    private final StudyGroupDatabase database;
 
-    public CountLessThanFormOfEducationCommandImpl(StudyGroupDatabaseInstance database) {
+    public CountLessThanFormOfEducationCommandImpl(StudyGroupDatabase database) {
         this.database = database;
         setCommandData(new CountLessThanFormOfEducationCommandData());
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
         try {
 
             FormOfEducation formOfEducation = Optional.ofNullable(packedArgs.get(0))

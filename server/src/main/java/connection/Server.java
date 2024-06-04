@@ -1,12 +1,8 @@
 package connection;
 
-import connection.Client;
-import connection.ConnectionHandler;
-import connection.ConnectionHandlerLogProxy;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
+import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.Session;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -17,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,12 +27,10 @@ public class Server {
 
     @Setter
     private Function<Request, String> executeRequest = (delete) -> "";
-    @Setter
-    private Consumer<Session> onNewSession = (delete) -> {};
-
+    @Getter
     Map<String, Long> sessionToClientIdMap = new HashMap<>();
 
-    List<Client> clientList = new ArrayList<>();
+    List<ClientHandler> clientHandlerList = new ArrayList<>();
 
     public Server(int port) {
         try {
@@ -55,14 +48,17 @@ public class Server {
             try {
                 Socket socket = serverSocket.accept();
 
-                Client client = new Client(new ConnectionHandlerLogProxy(socket), this);
+                ClientHandler clientHandler = new ClientHandler(new ConnectionHandlerLogProxy(socket), this);
 
-                client.setRequestExecuteFunction(executeRequest);
-                client.setOnThreadException(exception -> logger.severe(exception.getMessage()));
+                clientHandler.setRequestExecuteFunction(executeRequest);
+                clientHandler.setOnThreadException((exception, deadClientHandler) -> {
+                    logger.severe(exception.getMessage());
+                    clientHandlerList.remove(deadClientHandler);
+                });
 
-                clientList.add(client);
+                clientHandlerList.add(clientHandler);
 
-                logger.info("connection.Client " + socket.getInetAddress() + " connected");
+                logger.info("Client " + socket.getInetAddress() + " connected");
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -77,7 +73,7 @@ public class Server {
         return session;
     }
 
-    SecureRandom random;
+    SecureRandom random = new SecureRandom();
     private String generateSecureSession() {
         byte[] bytes = new byte[16];
         random.nextBytes(bytes);

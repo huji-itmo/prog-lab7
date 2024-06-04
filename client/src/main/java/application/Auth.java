@@ -16,14 +16,14 @@ public class Auth {
 
     private final DatabaseConnection connection;
 
-    public long loginOrRegister() {
+    public String loginOrRegister() {
 
         Scanner scanner = new Scanner(System.in);
 
         return chooseLoginOrRegister(scanner);
     }
 
-    public long chooseLoginOrRegister(Scanner scanner) {
+    public String chooseLoginOrRegister(Scanner scanner) {
         System.out.println("Hi there!");
         System.out.println("---> login");
         System.out.println("---> register");
@@ -39,32 +39,34 @@ public class Auth {
         return chooseLoginOrRegister(scanner);
     }
 
-    private long register(Scanner scanner) {
+    private String register(Scanner scanner) {
 
         ServerResponse response = connection.sendOneShot(new Request(new RegisterCommandData(),readUsernameAndPassword(scanner)));
 
         if (response.getCode() == 200) {
             System.out.println("Created new user!");
 
-            return Long.parseLong(response.getText());
+            return response.getText();
         }
         else {
-            return -1;
+            return "0";
         }
     }
 
-    private long login(Scanner scanner) {
+    private String login(Scanner scanner) {
         List<Object> params = readUsernameAndPassword(scanner);
 
         ServerResponse response = connection.sendOneShot(new Request(new LoginCommandData(),params));
 
+        System.out.println(response);
+
         if (response.getCode() == 200) {
             System.out.println("Hi! " + params.get(0));
 
-            return Long.parseLong(response.getText());
+            return response.getText();
         }
         else {
-            return -1;
+            return "0";
         }
     }
 

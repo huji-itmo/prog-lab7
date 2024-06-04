@@ -35,15 +35,14 @@ public class ClientApplication {
             System.err.println("Not connected!");
             System.exit(0);
         }
+        connection.startMessageAcceptingThread();
 
-        long client_id = new Auth(connection).chooseLoginOrRegister(new Scanner(System.in));
-        connection.setClientId(client_id);
+        String session = new Auth(connection).loginOrRegister();
+        connection.setSession(session);
 
-        System.out.println(client_id);
+        System.out.println(session);
 
         connection.addNewMessageHandler(ClientApplication::newMessageHandler);
-
-        connection.startMessageAcceptingThread();
 
         Scanner scanner = new Scanner(System.in);
 
@@ -59,7 +58,7 @@ public class ClientApplication {
                         continue;
                     }
 
-                    connection.send(processor.checkCommandAndCreateRequest(line));
+                    connection.sendRequest(processor.checkCommandAndCreateRequest(line));
                 } catch (CommandException exception) {
                     System.err.println(exception.getMessage());
                 }

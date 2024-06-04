@@ -14,7 +14,7 @@ public class ShowCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
 
         return database.serializeAllElements();
     }

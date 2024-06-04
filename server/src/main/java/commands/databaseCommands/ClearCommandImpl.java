@@ -15,8 +15,8 @@ public class ClearCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs) throws CommandException {
-        database.clear();
+    public String execute(List<Object> packedArgs, String session) throws CommandException {
+        database.clear(session);
         return "Cleared.";
     }
 }

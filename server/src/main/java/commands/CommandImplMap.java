@@ -1,7 +1,7 @@
 package commands;
 
 import commands.databaseCommands.*;
-import database.StudyGroupDatabaseInstance;
+import database.StudyGroupDatabase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class CommandImplMap {
     public CommandImplMap() {
     }
 
-    public void addDatabaseCommands(StudyGroupDatabaseInstance database) {
+    public void addDatabaseCommands(StudyGroupDatabase database) {
         putCommand(new AddCommandImpl(database));
         putCommand(new ClearCommandImpl(database));
         putCommand(new CountLessThanFormOfEducationCommandImpl(database));
@@ -27,6 +27,9 @@ public class CommandImplMap {
         putCommand(new UpdateByIdCommandImpl(database));
         putCommand(new ExistsIdCommandImpl(database));
         putCommand(new GetMinStudentCountCommandImpl(database));
+
+        putCommand(new RegisterCommandImpl(database));
+        putCommand(new LoginCommandImpl(database));
     }
 
     public void putCommand(DatabaseCommandImpl impl) {
