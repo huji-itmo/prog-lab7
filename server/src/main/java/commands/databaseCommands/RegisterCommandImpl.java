@@ -5,6 +5,7 @@ import commands.exceptions.CommandException;
 import database.Database;
 import lombok.AllArgsConstructor;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 @AllArgsConstructor
@@ -14,8 +15,6 @@ public class RegisterCommandImpl extends DatabaseCommandImpl {
     @Override
     public String execute(List<Object> packedArgs) throws CommandException {
 
-        database.registerNewUser((String)packedArgs.get(0), (String)packedArgs.get(0));
-
-        return null;
+        return Long.toString(database.registerNewUser((String)packedArgs.get(0), (String)packedArgs.get(0)));
     }
 }

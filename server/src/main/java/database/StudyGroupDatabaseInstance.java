@@ -1,11 +1,13 @@
 package database;
 
+import commands.exceptions.CommandException;
 import dataStructs.FormOfEducation;
 import dataStructs.StudyGroup;
 import dataStructs.User;
 import lombok.Getter;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.id.ForeignGenerator;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -223,6 +225,10 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
 
     @Override
     public long registerNewUser(String userName, String password) {
+        if (checkAlreadyExistsUser(userName)) {
+            throw new CommandException("User with name " + userName + " already exists!");
+        }
+
         try (Session session = factory.openSession()) {
             session.beginTransaction();
             User user = User.builder().user_name(userName).password(password).build();
@@ -233,6 +239,21 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
             return id;
         } catch (NoResultException e) {
             return -1;
+        }
+    }
+
+    public boolean checkAlreadyExistsUser(String userName) {
+        try (Session session = factory.openSession()) {
+            session.beginTransaction();
+
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<User> query = builder.createQuery(User.class);
+            Root<User> root =query.from(User.class);
+
+             query.select(root).where(builder.and(
+                    builder.equal(root.get("name"), userName)));
+
+             return !(session.createQuery(query).getResultList().isEmpty());
         }
     }
 

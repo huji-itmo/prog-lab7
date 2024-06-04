@@ -57,7 +57,7 @@ public interface Database<T, K> {
 
     long registerNewUser(String userName, String password);
 
-    boolean popUndoStackWithSession();
+    boolean popUndoStackWithSession(String session);
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     @Data

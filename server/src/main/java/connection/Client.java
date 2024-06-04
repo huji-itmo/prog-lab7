@@ -13,24 +13,27 @@ import java.io.IOException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@AllArgsConstructor
 public class Client {
 
     private Thread thread;
-
     private final ConnectionHandler handler;
+    private final Server server;
     @Getter
     private String session;
-
     @Setter
     Function<Request, String> requestExecuteFunction;
     @Setter
     Consumer<IOException> onThreadException;
 
-    public Client(ConnectionHandler handler) {
+    public Client(ConnectionHandler handler, Server server) {
         this.handler = handler;
+        this.server = server;
         thread = new Thread(getRunnable());
         thread.setDaemon(true);
+    }
+
+    private void setSession(String val) {
+        session= val;
     }
 
 
@@ -38,7 +41,9 @@ public class Client {
         return () -> {
 
             try {
-                session = getSessionFromClient();
+                Long clientId = Long.parseLong(getSessionFromClient());
+
+                setSession(server.createNewSessionWithClientId(clientId));
 
                 while (!thread.isInterrupted()) {
                     Request request = handler.readRequestBlocking();

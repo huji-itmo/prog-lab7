@@ -1,9 +1,7 @@
 import commands.CommandImplMap;
-import commands.exceptions.CommandException;
-import connection.ConnectionHandler;
+import connection.Server;
 import dataStructs.StudyGroup;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -36,7 +34,8 @@ public class ServerApplication {
             System.exit(-1);
         }
 
-        Server server = new Server(5252, ServerApplication::messageHandler);
+        Server server = new Server(5252);
+        server.setExecuteRequest(ServerApplication::messageHandler);
 
         server.startClientAcceptingLoop();
     }
