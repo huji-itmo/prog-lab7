@@ -1,5 +1,6 @@
-package commands;
+package commands.databaseCommands;
 
+import commands.DatabaseCommandImpl;
 import commands.auth.LoginCommandData;
 import commands.exceptions.CommandException;
 import dataStructs.StudyGroup;

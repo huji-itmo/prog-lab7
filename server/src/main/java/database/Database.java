@@ -1,5 +1,6 @@
 package database;
 
+import dataStructs.StudyGroup;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -50,11 +51,13 @@ public interface Database<T, K> {
 
     void pushToUndoStack(UndoLog<T> log);
 
-    boolean undo();
+    boolean undo(UndoLog<StudyGroup> log);
 
     boolean existsById(K id);
 
     long registerNewUser(String userName, String password);
+
+    boolean popUndoStackWithSession();
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     @Data

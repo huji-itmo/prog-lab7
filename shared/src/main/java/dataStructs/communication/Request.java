@@ -15,13 +15,11 @@ public class Request implements Serializable {
 
     List<Object> params;
 
-    @Setter
-    long clientId;
+    String session;
 
     public Request(CommandData commandData, List<Object> params) {
         this.commandData = commandData;
         this.params = params;
-        clientId = -1;
     }
 
     @Serial

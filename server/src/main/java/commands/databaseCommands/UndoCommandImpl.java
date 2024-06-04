@@ -16,7 +16,7 @@ public class UndoCommandImpl extends DatabaseCommandImpl {
 
     @Override
     public String execute(List<Object> packedArgs) throws CommandException {
-        boolean res = database.undo();
+        boolean res = database.popUndoStackWithSession();
 
         if (!res) {
             throw new CommandException("Nothing to undo.");

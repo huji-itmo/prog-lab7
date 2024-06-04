@@ -1,32 +1,24 @@
+package connection;
+
 import dataStructs.communication.Request;
 import dataStructs.communication.ServerResponse;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.function.BiConsumer;
 
 
 @Getter
 public class ConnectionHandler {
 
-    private final Socket currentSocket;
-    private final BiConsumer<Request, ConnectionHandler> onNewMessageLambdaDefault;
-
+    protected final Socket currentSocket;
     private final ObjectOutputStream objectOutputStream;
     private final ObjectInputStream inputStream;
 
-    @Setter
-    public BiConsumer<ConnectionHandler, String> onClientDisconnected;
-    public BiConsumer<ConnectionHandler, ServerResponse> onSendResponse;
+    public ConnectionHandler(Socket socket) {
 
-
-    public ConnectionHandler(Socket socket, BiConsumer<Request, ConnectionHandler> onNewMessage) {
-
-        onNewMessageLambdaDefault = onNewMessage;
         currentSocket = socket;
 
         try {
@@ -37,17 +29,12 @@ public class ConnectionHandler {
         }
     }
 
-    public void send(ServerResponse message) {
-        try {
-            objectOutputStream.writeObject(message);
-            onSendResponse.accept(this, message);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public void sendResponseBlocking(ServerResponse message) throws IOException {
+        objectOutputStream.writeObject(message);
     }
 
 
-    public Request readRequestBlocking() {
+    public Request readRequestBlocking() throws IOException {
         try {
             Object obj = inputStream.readObject();
 
@@ -57,7 +44,7 @@ public class ConnectionHandler {
 
             return message;
 
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

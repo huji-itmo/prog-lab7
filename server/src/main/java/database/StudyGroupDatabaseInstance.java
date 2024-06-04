@@ -4,7 +4,6 @@ import dataStructs.FormOfEducation;
 import dataStructs.StudyGroup;
 import dataStructs.User;
 import lombok.Getter;
-import lombok.Setter;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
@@ -23,10 +22,7 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
 
     private final SessionFactory factory;
 
-    Stack<UndoLog<StudyGroup>> undoLogStacksByClient = new Stack<>();
-
-    @Setter
-    private int session = 0;
+     Stack<UndoLog<StudyGroup>> undoLogStacksByClient = new Stack<>();
 
     private final Collection<StudyGroup> collection;
 
@@ -188,7 +184,7 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
     }
 
     @Override
-    public boolean undo() throws RuntimeException{
+    public boolean undo(UndoLog<StudyGroup> log) throws RuntimeException{
         if (undoLogStacksByClient.isEmpty())
             return false;
 
@@ -202,7 +198,6 @@ public class StudyGroupDatabaseInstance implements Database<StudyGroup, Long> {
             entityManager.merge(studyGroup);
         };
 
-        UndoLog<StudyGroup> log = undoLogStacksByClient.pop();
         try (Session session = factory.openSession())
         {
             EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();

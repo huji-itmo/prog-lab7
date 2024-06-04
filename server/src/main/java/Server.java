@@ -1,31 +1,27 @@
+import connection.ConnectionHandler;
 import dataStructs.communication.Request;
 import dataStructs.communication.ServerResponse;
-import lombok.Setter;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.net.UnknownHostException;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Server {
     private static final Logger logger = Logger.getLogger("Server");
-
     static {
         logger.setLevel(Level.FINEST);
     }
 
     private final ServerSocket serverSocket;
 
-    private final BiConsumer<Request, ConnectionHandler> onNewMessageHandler;
+    private final Function<Request, String> onNewMessageHandler;
 
-    @Setter
-    private Consumer<ConnectionHandler> onConnected = (delete) -> {};
-
-    public Server(int port, BiConsumer<Request, ConnectionHandler> onNewMessageHandler) {
+    public Server(int port, Function<Request, String> onNewMessageHandler) {
         this.onNewMessageHandler = onNewMessageHandler;
 
         try {
@@ -45,7 +41,7 @@ public class Server {
 
                 ConnectionHandler handler = new ConnectionHandlerLogProxy(socket);
 
-                logger.info("Client " + socket.getInetAddress() + " connected");
+                logger.info("connection.Client " + socket.getInetAddress() + " connected");
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -53,24 +49,26 @@ public class Server {
         }
     }
 
-    public class ConnectionHandlerLogProxy extends ConnectionHandler {
-
+    public static class ConnectionHandlerLogProxy extends ConnectionHandler {
         public ConnectionHandlerLogProxy(Socket socket) {
-            super(socket, (req, han) ->  {
-                logger.info("Request from " + socket.getInetAddress() + ": " + req);
-                onNewMessageHandler.accept(req, han);
-            });
-
-            onSendResponse = ConnectionHandlerLogProxy::logResponse;
-            onClientDisconnected = ConnectionHandlerLogProxy::onClientDisconnected;
+            super(socket);
         }
 
-        public static void logResponse(ConnectionHandler handler, ServerResponse response) {
-            logger.info("Send response to " + handler.getCurrentSocket().getInetAddress() + ": " + response);
+        @Override
+        public void sendResponseBlocking(ServerResponse message) throws IOException {
+            super.sendResponseBlocking(message);
+
+            logger.info("Sent message to "+ getCurrentSocket().getInetAddress() + ".\n" + message);
+
         }
 
-        public static void onClientDisconnected(ConnectionHandler handler, String cause) {
-            logger.info("Client " + handler.getCurrentSocket().getInetAddress() + " disconnected " + cause);
+
+        public Request readRequestBlocking() throws IOException {
+            Request request = super.readRequestBlocking();
+
+            logger.info("Got request from"+ getCurrentSocket().getInetAddress() + ".\n" + request);
+
+            return request;
         }
     }
 }

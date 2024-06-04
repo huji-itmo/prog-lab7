@@ -1,5 +1,6 @@
 import commands.CommandImplMap;
 import commands.exceptions.CommandException;
+import connection.ConnectionHandler;
 import dataStructs.StudyGroup;
 import dataStructs.communication.Request;
 import dataStructs.communication.ServerResponse;
@@ -8,7 +9,6 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Stack;
 
 import database.StudyGroupDatabaseInstance;
 import org.hibernate.*;
@@ -41,14 +41,7 @@ public class ServerApplication {
         server.startClientAcceptingLoop();
     }
 
-    public static void messageHandler(Request request, ConnectionHandler handler) {
-        try {
-//            database.setCurrentClient(handler.getClientId());
-
-            String out = implMap.map.get(request.getCommandData()).execute(request.getParams());
-            handler.send( new ServerResponse(200, out));
-        } catch (CommandException e) {
-            handler.send(new ServerResponse(500, e.getMessage()));
-        }
+    public static String messageHandler(Request request) {
+        return implMap.map.get(request.getCommandData()).execute(request.getParams());
     }
 }
