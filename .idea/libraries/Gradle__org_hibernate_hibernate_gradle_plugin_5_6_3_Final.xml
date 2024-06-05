@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: org.hibernate:hibernate-gradle-plugin:5.6.3.Final" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="org.hibernate" artifactId="hibernate-gradle-plugin" version="5.6.3.Final" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.hibernate/hibernate-gradle-plugin/5.6.3.Final/3e7a3ecbd4a41be3a12018fed3b271e29dd28ed2/hibernate-gradle-plugin-5.6.3.Final.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

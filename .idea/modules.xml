@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/client.iml" filepath="$PROJECT_DIR$/client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/client.main.iml" filepath="$PROJECT_DIR$/.idea/modules/client.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/client.test.iml" filepath="$PROJECT_DIR$/.idea/modules/client.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/prog-lab7.iml" filepath="$PROJECT_DIR$/.idea/prog-lab7.iml" />
+      <module fileurl="file://$PROJECT_DIR$/server.iml" filepath="$PROJECT_DIR$/server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/server.main.iml" filepath="$PROJECT_DIR$/.idea/modules/server.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/shared/server.shared.iml" filepath="$PROJECT_DIR$/.idea/modules/shared/server.shared.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/server.test.iml" filepath="$PROJECT_DIR$/.idea/modules/server.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/shared.iml" filepath="$PROJECT_DIR$/shared.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/shared.main.iml" filepath="$PROJECT_DIR$/.idea/modules/shared.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/shared.test.iml" filepath="$PROJECT_DIR$/.idea/modules/shared.test.iml" />
+    </modules>
+  </component>
+</project>
