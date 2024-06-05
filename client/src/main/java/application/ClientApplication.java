@@ -40,8 +40,6 @@ public class ClientApplication {
         String session = new Auth(connection).loginOrRegister();
         connection.setSession(session);
 
-        System.out.println(session);
-
         connection.addNewMessageHandler(ClientApplication::newMessageHandler);
 
         Scanner scanner = new Scanner(System.in);

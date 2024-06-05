@@ -76,7 +76,7 @@ public class ClientHandler {
             try {
                 return requestExecuteFunction.apply(request);
             } catch (CommandException e) {
-                handler.sendResponseBlocking(new ServerResponse(400, "Bad request! " + e.getMessage()));
+                handler.sendResponseBlocking(new ServerResponse(400, e.getMessage()));
             }
         }
 

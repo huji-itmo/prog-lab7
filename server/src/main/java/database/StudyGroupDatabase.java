@@ -262,13 +262,11 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
                     builder.equal(root.get("user_name"), userName),
                     builder.equal(root.get("password"), password)));
 
-
-
             User user = entityManager.createQuery(query).getSingleResult();
 
             return user.getId();
         } catch (NoResultException e) {
-            return -1;
+            throw new CommandException("Wrong user name or password!");
         }
     }
 
