@@ -4,6 +4,7 @@ import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
 import commands.exceptions.IllegalCommandSyntaxException;
 import dataStructs.FormOfEducation;
+import dataStructs.communication.CommandExecutionResult;
 import database.StudyGroupDatabase;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class CountLessThanFormOfEducationCommandImpl extends DatabaseCommandImpl
     }
 
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
         try {
 
             FormOfEducation formOfEducation = Optional.ofNullable(packedArgs.get(0))
@@ -29,9 +30,10 @@ public class CountLessThanFormOfEducationCommandImpl extends DatabaseCommandImpl
 
             long count = database.getCountLessThanFormOfEducation(formOfEducation);
 
-            return "The count is " + count + "!";
-        } catch (IllegalArgumentException e) {
-            throw new IllegalCommandSyntaxException(e.getMessage(), getCommandData());
+            return CommandExecutionResult.success("The count is " + count + "!");
+        } catch (IllegalArgumentException | CommandException e) {
+            return CommandExecutionResult.badRequest(new IllegalCommandSyntaxException(e.getMessage(), getCommandData()).getMessage());
+
         }
 
     }

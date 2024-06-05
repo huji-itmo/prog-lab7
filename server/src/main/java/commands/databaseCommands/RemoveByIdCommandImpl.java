@@ -3,6 +3,7 @@ package commands.databaseCommands;
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
 import commands.exceptions.IllegalCommandSyntaxException;
+import dataStructs.communication.CommandExecutionResult;
 import database.Database;
 
 import java.util.List;
@@ -16,15 +17,15 @@ public class RemoveByIdCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
         try {
             database.removeElementByPrimaryKey((Long) packedArgs.get(0), session);
 
-            return "Element is removed!";
+            return CommandExecutionResult.success("Element is removed!");
         } catch (NumberFormatException | ClassCastException e) {
-            throw new IllegalCommandSyntaxException("{id} should be a number!", getCommandData());
+            return CommandExecutionResult.badRequest(new IllegalCommandSyntaxException("{id} should be a number!", getCommandData()).getMessage());
         } catch (IllegalArgumentException e) {
-            throw new CommandException(e.getMessage());
+            return CommandExecutionResult.badRequest(e.getMessage());
         }
     }
 }

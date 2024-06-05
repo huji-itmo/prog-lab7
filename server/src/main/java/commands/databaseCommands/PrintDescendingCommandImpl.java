@@ -2,26 +2,27 @@ package commands.databaseCommands;
 
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
+import dataStructs.StudyGroup;
+import dataStructs.communication.CommandExecutionResult;
 import database.Database;
 
 import java.util.List;
 
 public class PrintDescendingCommandImpl extends DatabaseCommandImpl {
 
-    private final Database<?, ?> database;
+    private final Database<StudyGroup, ?> database;
 
-    public PrintDescendingCommandImpl(Database<?, ?> database) {
+    public PrintDescendingCommandImpl(Database<StudyGroup, ?> database) {
         this.database = database;
         setCommandData(new PrintDescendingCommandData());
     }
 
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
-        String out = database.getElementsDescendingByPrimaryKey();
-
-        if (out.isBlank()) {
-            throw new CommandException("The database is empty!");
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
+        List<StudyGroup> list = database.getElementsDescendingByPrimaryKey();
+        if (list.isEmpty()) {
+            return CommandExecutionResult.badRequest("The database is empty!");
         }
-        return out;
+        return CommandExecutionResult.success(list);
     }
 }

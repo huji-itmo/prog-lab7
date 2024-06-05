@@ -20,7 +20,7 @@ public interface Database<T, K> {
      */
     List<T> removeGreaterOrLowerThanPrimaryKey(K id, boolean greater, String sessionStr);
 
-    String getElementsDescendingByPrimaryKey();
+    List<T> getElementsDescendingByPrimaryKey();
 
     String getInfo();
     /**
@@ -29,7 +29,7 @@ public interface Database<T, K> {
      * @param element element
      */
     void addElement(T element, String sessionStr);
-    String serializeAllElements();
+    List<T> getElements();
     T updateElementByPrimaryKey(K id, T new_element, String sessionStr) throws IllegalArgumentException;
     T removeElementByPrimaryKey(K id, String sessionStr) throws IllegalArgumentException;
     /**

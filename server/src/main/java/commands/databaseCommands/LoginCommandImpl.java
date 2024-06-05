@@ -3,6 +3,7 @@ package commands.databaseCommands;
 import commands.DatabaseCommandImpl;
 import commands.auth.LoginCommandData;
 import commands.exceptions.CommandException;
+import dataStructs.communication.CommandExecutionResult;
 import database.StudyGroupDatabase;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public class LoginCommandImpl extends DatabaseCommandImpl {
         setCommandData(new LoginCommandData());
     }
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
-        return Long.toString(database.login((String) packedArgs.get(0), (String) packedArgs.get(1)));
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
+        return CommandExecutionResult.success(database.login((String) packedArgs.get(0), (String) packedArgs.get(1)));
     }
 }

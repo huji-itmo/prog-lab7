@@ -2,6 +2,7 @@ package commands.databaseCommands;
 
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
+import dataStructs.communication.CommandExecutionResult;
 import database.Database;
 
 import java.util.List;
@@ -9,8 +10,8 @@ import java.util.List;
 public class InfoCommandImpl extends DatabaseCommandImpl {
     Database<?, ?> database;
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
-        return database.getInfo();
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
+        return CommandExecutionResult.success(database.getInfo());
     }
 
     public InfoCommandImpl(Database<?, ?> database) {

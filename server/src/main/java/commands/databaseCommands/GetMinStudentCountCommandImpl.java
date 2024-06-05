@@ -2,10 +2,12 @@ package commands.databaseCommands;
 
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
+import dataStructs.communication.CommandExecutionResult;
 import database.StudyGroupDatabase;
 
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 public class GetMinStudentCountCommandImpl extends DatabaseCommandImpl {
 
@@ -17,10 +19,10 @@ public class GetMinStudentCountCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
 
-        OptionalInt res = collectionDatabase.getMinStudentCount();
+        OptionalLong res = collectionDatabase.getMinStudentCount();
 
-        return res.toString();
+        return CommandExecutionResult.success(res.orElse(0L));
     }
 }

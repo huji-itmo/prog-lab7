@@ -1,5 +1,6 @@
 package connection;
 
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,13 +25,10 @@ public class Server {
     }
     private final ServerSocket serverSocket;
 
-
     @Setter
-    private Function<Request, String> executeRequest = (delete) -> "";
+    private Function<Request, CommandExecutionResult> executeRequest;
     @Getter
     Map<String, Long> sessionToClientIdMap = new HashMap<>();
-
-    List<ClientHandler> clientHandlerList = new ArrayList<>();
 
     public Server(int port) {
         try {
@@ -53,10 +51,8 @@ public class Server {
                 clientHandler.setRequestExecuteFunction(executeRequest);
                 clientHandler.setOnThreadException((exception, deadClientHandler) -> {
                     logger.severe(exception.getMessage());
-                    clientHandlerList.remove(deadClientHandler);
+                    sessionToClientIdMap.remove(deadClientHandler.getSession());
                 });
-
-                clientHandlerList.add(clientHandler);
 
                 logger.info("Client " + socket.getInetAddress() + " connected");
 

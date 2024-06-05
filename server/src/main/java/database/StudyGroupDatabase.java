@@ -95,11 +95,10 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
     }
 
     @Override
-    public String getElementsDescendingByPrimaryKey() {
+    public List<StudyGroup> getElementsDescendingByPrimaryKey() {
         return getCollection().stream()
                 .sorted(Comparator.comparingLong(StudyGroup::getId))
-                .map(str -> str + "\n")
-                .collect(Collectors.joining());
+                .toList();
     }
 
     @Override
@@ -157,11 +156,11 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
     }
 
     @Override
-    public String serializeAllElements() {
-        return getCollection().stream()
-                .map(Objects::toString)
-                .map(string -> string + "\n")
-                .collect(Collectors.joining());
+    public List<StudyGroup> getElements() {
+        return getCollection()
+                .stream()
+                .sorted(Comparator.comparingLong(StudyGroup::getId))
+                .toList();
     }
 
     @Override
@@ -270,19 +269,20 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         }
     }
 
-    public OptionalInt getMinStudentCount() {
+    public OptionalLong getMinStudentCount() {
         return getCollection()
                 .stream()
                 .filter(studyGroup -> studyGroup.getStudentsCount() != null)
                 .mapToInt(StudyGroup::getStudentsCount)
+                .mapToLong(Integer::toUnsignedLong)
                 .min();
     }
 
-    public double getSumOfAverageMark() {
+    public long getSumOfAverageMark() {
         return getCollection().stream()
                 .mapToLong(StudyGroup::getAverageMark)
                 .summaryStatistics()
-                .getAverage();
+                .getSum();
     }
 
     public long getCountLessThanFormOfEducation(FormOfEducation formOfEducation) {

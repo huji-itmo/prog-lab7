@@ -3,6 +3,7 @@ package commands.databaseCommands;
 import commands.DatabaseCommandImpl;
 import commands.auth.RegisterCommandData;
 import commands.exceptions.CommandException;
+import dataStructs.communication.CommandExecutionResult;
 import database.Database;
 import lombok.AllArgsConstructor;
 
@@ -19,8 +20,8 @@ public class RegisterCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
 
-        return Long.toString(database.registerNewUser((String)packedArgs.get(0), (String)packedArgs.get(0)));
+        return CommandExecutionResult.success(database.registerNewUser((String)packedArgs.get(0), (String)packedArgs.get(0)));
     }
 }

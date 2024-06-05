@@ -2,9 +2,8 @@ package connection;
 
 import commands.auth.LoginCommandData;
 import commands.auth.RegisterCommandData;
-import commands.exceptions.CommandException;
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,13 +13,15 @@ import java.util.function.Function;
 
 public class ClientHandler {
 
-    private Thread thread;
+    private final Thread thread;
     private final ConnectionHandler handler;
     private final Server server;
     @Getter
     private String session;
+    @Getter
+    private Long clientId;
     @Setter
-    Function<Request, String> requestExecuteFunction;
+    Function<Request, CommandExecutionResult> requestExecuteFunction;
     @Setter
     BiConsumer<Exception, ClientHandler> onThreadException;
 
@@ -41,17 +42,17 @@ public class ClientHandler {
         return () -> {
 
             try {
-                Long clientId = Long.parseLong(getSessionFromClient());
+                clientId = getClientIdFromLogin();
 
                 setSession(server.createNewSessionWithClientId(clientId));
 
-                handler.sendResponseBlocking(new ServerResponse(200, getSession()));
+                handler.sendResponseBlocking(CommandExecutionResult.success(getSession())));
 
                 while (!thread.isInterrupted()) {
                     Request request = handler.readRequestBlocking();
 
                     if (!request.getSession().equals(getSession())) {
-                        handler.sendResponseBlocking(new ServerResponse(400, "Wrong session parameter. Sussy baka impostor"));
+                        handler.sendResponseBlocking(CommandExecutionResult.badRequest("Wrong session parameter. Sussy baka impostor"));
                         continue;
                     }
 
@@ -64,31 +65,30 @@ public class ClientHandler {
         };
     }
 
-    public String getSessionFromClient() throws IOException {
+    public Long getClientIdFromLogin() throws IOException {
         while (!thread.isInterrupted()) {
             Request request = handler.readRequestBlocking();
 
             if (request.getCommandData().getClass() != RegisterCommandData.class && request.getCommandData().getClass() != LoginCommandData.class) {
-                handler.sendResponseBlocking(new ServerResponse(400, "Bad request! Need to send register or login command."));
+                handler.sendResponseBlocking(CommandExecutionResult.badRequest("Bad request! Need to send register or login command."));
                 continue;
             }
 
-            try {
-                return requestExecuteFunction.apply(request);
-            } catch (CommandException e) {
-                handler.sendResponseBlocking(new ServerResponse(400, e.getMessage()));
+            CommandExecutionResult result = requestExecuteFunction.apply(request);
+
+            if (result.getCode() != 200) {
+                handler.sendResponseBlocking(result);
+
+                return getClientIdFromLogin();
             }
+
+            return result.getLong();
         }
 
         throw new IOException("Thread is interrupted.");
     }
 
     public void getAndSendResponseFromRequest(Request request) throws IOException {
-        try {
-            String result = requestExecuteFunction.apply(request);
-            handler.sendResponseBlocking(new ServerResponse(200, result));
-        } catch (CommandException e) {
-            handler.sendResponseBlocking(new ServerResponse(500, e.getMessage()));
-        }
+        handler.sendResponseBlocking(requestExecuteFunction.apply(request));
     }
 }

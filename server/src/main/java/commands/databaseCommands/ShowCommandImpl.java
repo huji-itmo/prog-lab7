@@ -2,20 +2,22 @@ package commands.databaseCommands;
 
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
+import dataStructs.StudyGroup;
+import dataStructs.communication.CommandExecutionResult;
 import database.Database;
 
 import java.util.List;
 
 public class ShowCommandImpl extends DatabaseCommandImpl {
-    Database<?, ?> database;
-    public ShowCommandImpl(Database<?, ?> database) {
+    Database<StudyGroup, ?> database;
+    public ShowCommandImpl(Database<StudyGroup, ?> database) {
         this.database = database;
         setCommandData(new ShowCommandData());
     }
 
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
 
-        return database.serializeAllElements();
+        return CommandExecutionResult.success(database.getElements());
     }
 }

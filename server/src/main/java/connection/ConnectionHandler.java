@@ -1,5 +1,6 @@
 package connection;
 
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
 import dataStructs.communication.ServerResponse;
 import lombok.Getter;
@@ -29,7 +30,7 @@ public class ConnectionHandler {
         }
     }
 
-    public void sendResponseBlocking(ServerResponse message) throws IOException {
+    public void sendResponseBlocking(CommandExecutionResult message) throws IOException {
         objectOutputStream.writeObject(message);
     }
 

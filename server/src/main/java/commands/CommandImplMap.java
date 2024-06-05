@@ -9,9 +9,6 @@ import java.util.Map;
 public class CommandImplMap {
     public Map<CommandData, DatabaseCommandImpl> map = new HashMap<>();
 
-    public CommandImplMap() {
-    }
-
     public void addDatabaseCommands(StudyGroupDatabase database) {
         putCommand(new AddCommandImpl(database));
         putCommand(new ClearCommandImpl(database));

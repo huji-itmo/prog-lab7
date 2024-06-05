@@ -2,6 +2,7 @@ package commands.databaseCommands;
 
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
+import dataStructs.communication.CommandExecutionResult;
 import database.Database;
 
 import java.util.List;
@@ -16,16 +17,16 @@ public class RemoveGreaterCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public String execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
 
         try {
             long count = database.removeGreaterOrLowerThanPrimaryKey((Long) packedArgs.get(0), true, session).size();
 
-            return "Removed " + count + " elements.";
+            return CommandExecutionResult.success("Removed " + count + " elements.");
 
         }
         catch (NumberFormatException e) {
-            throw new CommandException(e.getMessage());
+            return CommandExecutionResult.badRequest(e.getMessage());
         }
     }
 }
