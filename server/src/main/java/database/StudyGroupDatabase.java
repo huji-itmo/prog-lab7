@@ -128,7 +128,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
     @Override
     public List<StudyGroup> getElementsDescendingByPrimaryKey() {
         return getCollection().stream()
-                .sorted(Comparator.comparingLong(StudyGroup::getId))
+                .sorted(Comparator.comparingLong(StudyGroup::getId).reversed())
                 .toList();
     }
 
@@ -343,7 +343,8 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
     public long getCountLessThanFormOfEducation(FormOfEducation formOfEducation) {
         return getCollection()
                 .stream()
-                .filter(group -> group.getFormOfEducation() == null || group.getFormOfEducation().ordinal() < formOfEducation.ordinal())
+                .filter(group -> group.getFormOfEducation() != null)
+                .filter(group -> group.getFormOfEducation().ordinal() < formOfEducation.ordinal())
                 .count();
     }
 }
