@@ -4,6 +4,7 @@ import commands.auth.LoginCommandData;
 import commands.auth.RegisterCommandData;
 import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
+import dataStructs.communication.SessionByteArray;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,16 +15,24 @@ import java.util.function.Function;
 public class ClientHandler {
 
     private final Thread thread;
+    @Getter
     private final ConnectionHandler handler;
     private final Server server;
     @Getter
-    private String session;
+    private SessionByteArray session;
     @Getter
-    private Long clientId;
+    private String clientName;
     @Setter
-    Function<Request, CommandExecutionResult> requestExecuteFunction;
+    private Function<Request, CommandExecutionResult> requestExecuteFunction;
     @Setter
-    BiConsumer<Exception, ClientHandler> onThreadException;
+    private BiConsumer<Exception, ClientHandler> onThreadException;
+    @Setter
+    private BiConsumer<SessionByteArray, ClientHandler> onNewSession;
+
+
+    private Request requestBuffer = null;
+    private boolean isIntercepting = false;
+    private final Object lock = new Object();
 
     public ClientHandler(ConnectionHandler handler, Server server) {
         this.handler = handler;
@@ -33,25 +42,34 @@ public class ClientHandler {
         thread.start();
     }
 
-    private void setSession(String val) {
+    private void setSession(SessionByteArray val) {
         session= val;
+        onNewSession.accept(val, this);
     }
 
 
     public Runnable getRunnable() {
         return () -> {
-
             try {
-                clientId = getClientIdFromLogin();
+                clientName = getClientNameFromLogin().trim();
 
-                setSession(server.createNewSessionWithClientId(clientId));
+                setSession(server.createNewSession(this));
 
-                handler.sendResponseBlocking(CommandExecutionResult.success(getSession())));
+                handler.sendResponseBlocking(CommandExecutionResult.success(getSession()));
 
                 while (!thread.isInterrupted()) {
                     Request request = handler.readRequestBlocking();
 
-                    if (!request.getSession().equals(getSession())) {
+                    if (isIntercepting) {
+                        synchronized (lock) {
+                            requestBuffer = request;
+                            lock.notifyAll();
+                        }
+
+                        continue;
+                    }
+
+                    if (!request.getSessionByteArray().equals(getSession())) {
                         handler.sendResponseBlocking(CommandExecutionResult.badRequest("Wrong session parameter. Sussy baka impostor"));
                         continue;
                     }
@@ -65,7 +83,7 @@ public class ClientHandler {
         };
     }
 
-    public Long getClientIdFromLogin() throws IOException {
+    public String getClientNameFromLogin() throws IOException {
         while (!thread.isInterrupted()) {
             Request request = handler.readRequestBlocking();
 
@@ -76,13 +94,13 @@ public class ClientHandler {
 
             CommandExecutionResult result = requestExecuteFunction.apply(request);
 
-            if (result.getCode() != 200) {
-                handler.sendResponseBlocking(result);
-
-                return getClientIdFromLogin();
+            if (result.getCode() == 200) {
+                return result.getText();
             }
 
-            return result.getLong();
+            handler.sendResponseBlocking(result);
+
+            return getClientNameFromLogin();
         }
 
         throw new IOException("Thread is interrupted.");
@@ -90,5 +108,28 @@ public class ClientHandler {
 
     public void getAndSendResponseFromRequest(Request request) throws IOException {
         handler.sendResponseBlocking(requestExecuteFunction.apply(request));
+    }
+
+    public Request interceptRequestBlocking() {
+        isIntercepting = true;
+        try {
+
+            synchronized (lock) {
+                lock.wait();
+                //wait for request to come
+                if (requestBuffer != null) {
+                    Request request = requestBuffer;
+                    requestBuffer = null;
+                    isIntercepting = false;
+                    return request;
+                }
+
+                throw new RuntimeException();
+
+            }
+
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

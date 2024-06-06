@@ -55,7 +55,7 @@ public class CommandDataProcessor {
         return new Request(data, packedArgs);
     }
 
-    public boolean checkClientSide(String input) {
+    public boolean checkAndExecuteClientSide(String input) {
         input = input.trim();
 
         String[] splitCommand = input.split(" ", 2);

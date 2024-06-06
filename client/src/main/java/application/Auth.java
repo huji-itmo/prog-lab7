@@ -3,9 +3,10 @@ package application;
 import commands.auth.LoginCommandData;
 import commands.auth.RegisterCommandData;
 import commands.exceptions.CommandException;
-import connection.DatabaseConnection;
+import connection.ConnectionWithServer;
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
+import dataStructs.communication.SessionByteArray;
 import lombok.AllArgsConstructor;
 
 import java.io.Console;
@@ -15,16 +16,16 @@ import java.util.Scanner;
 @AllArgsConstructor
 public class Auth {
 
-    private final DatabaseConnection connection;
+    private final ConnectionWithServer connection;
 
-    public String loginOrRegister() {
+    public SessionByteArray loginOrRegister() {
 
         Scanner scanner = new Scanner(System.in);
 
         return chooseLoginOrRegister(scanner);
     }
 
-    public String chooseLoginOrRegister(Scanner scanner) {
+    public SessionByteArray chooseLoginOrRegister(Scanner scanner) {
         System.out.println("Hi there! Choose one of the available commands");
         System.out.println("- login");
         System.out.println("- register");
@@ -39,7 +40,7 @@ public class Auth {
                 case "exit":
                     System.out.println("Bye bye!");
                     System.exit(0);
-                    return "";
+                    return null;
                 default:
                     System.out.println("Try again...");
                     return chooseLoginOrRegister(scanner);
@@ -50,9 +51,9 @@ public class Auth {
         }
     }
 
-    private String register(Scanner scanner) {
+    private SessionByteArray register(Scanner scanner) {
 
-        ServerResponse response = connection.sendOneShot(new Request(new RegisterCommandData(),readUsernameAndPassword(scanner)));
+        CommandExecutionResult response = connection.sendOneShot(new Request(new RegisterCommandData(), readUsernameAndPassword(scanner)));
 
         if (response.getCode() != 200) {
             throw new CommandException(response.getText());
@@ -60,13 +61,13 @@ public class Auth {
 
         System.out.println("Created new user!");
 
-        return response.getText();
+        return response.getSessionByteArray();
     }
 
-    private String login(Scanner scanner) {
+    private SessionByteArray login(Scanner scanner) {
         List<Object> params = readUsernameAndPassword(scanner);
 
-        ServerResponse response = connection.sendOneShot(new Request(new LoginCommandData(),params));
+        CommandExecutionResult response = connection.sendOneShot(new Request(new LoginCommandData(), params));
 
         if (response.getCode() != 200) {
             throw new CommandException(response.getText());
@@ -74,7 +75,7 @@ public class Auth {
 
         System.out.println("Hi, " + params.get(0) + "!");
 
-        return response.getText();
+        return response.getSessionByteArray();
     }
 
     private List<Object> readUsernameAndPassword(Scanner scanner) {

@@ -1,9 +1,9 @@
-package dataStructs.communication;
+package dataStructs.communication.enums;
 
 public enum ResponseType {
     TEXT,
     BOOLEAN,
     NUMBER_LONG,
+    SESSION_BYTE_ARRAY,
     LIST_OF_STUDY_GROUP,
-    LIST_OF_STUDY_GROUP_WITH_USER_NAME
 }

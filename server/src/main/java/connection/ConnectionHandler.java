@@ -2,8 +2,6 @@ package connection;
 
 import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
-import lombok.Getter;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -11,7 +9,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 
-@Getter
 public class ConnectionHandler {
 
     protected final Socket currentSocket;
@@ -24,7 +21,7 @@ public class ConnectionHandler {
 
         try {
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            inputStream = new ObjectInputStream(getCurrentSocket().getInputStream());
+            inputStream = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

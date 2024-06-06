@@ -1,12 +1,11 @@
 package commands.clientSideCommands;
 
-import application.ClientApplication;
 import commands.CommandDataProcessor;
 import commands.clientSideCommands.commandData.ExecuteScriptCommandData;
 import commands.exceptions.CommandException;
 import commands.exceptions.RecursionIsNotSupportedException;
-import connection.DatabaseConnection;
-import dataStructs.communication.ServerResponse;
+import connection.ConnectionWithServer;
+import dataStructs.communication.CommandExecutionResult;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,11 +15,11 @@ import java.util.Stack;
 
 public class ExecuteScriptCommand extends ClientSideCommand {
 
-    private final DatabaseConnection connection;
+    private final ConnectionWithServer connection;
     private final CommandDataProcessor dataProcessor;
     private final Stack<Path> scriptPathCallStack = new Stack<>();
 
-    public ExecuteScriptCommand(DatabaseConnection connection, CommandDataProcessor dataProcessor) {
+    public ExecuteScriptCommand(ConnectionWithServer connection, CommandDataProcessor dataProcessor) {
         this.connection = connection;
         this.dataProcessor = dataProcessor;
         setCommandData(new ExecuteScriptCommandData());
@@ -42,11 +41,11 @@ public class ExecuteScriptCommand extends ClientSideCommand {
                     .filter(line -> !line.isBlank())
                     .filter(line -> !line.startsWith("#"))
                     .forEach(line -> {
-                        if (dataProcessor.checkClientSide(line)) {
+                        if (dataProcessor.checkAndExecuteClientSide(line)) {
                             return;
                         }
-                        ServerResponse response = connection.sendOneShot(dataProcessor.checkCommandAndCreateRequest(line));
-                        ClientApplication.newMessageHandler(response);
+                        CommandExecutionResult response = connection.sendOneShot(dataProcessor.checkCommandAndCreateRequest(line));
+                        response.printResult();
                     });
 
         } catch (IOException e) {

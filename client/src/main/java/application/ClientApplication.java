@@ -2,24 +2,25 @@ package application;
 
 import commands.CommandDataProcessor;
 import commands.clientSideCommands.*;
-import commands.clientSideCommands.commandData.*;
+import commands.clientSideCommands.commandData.ExitDatabaseCommandData;
 import commands.clientSideCommands.commandData.HelpCommandData;
 import commands.databaseCommands.*;
-import commands.exceptions.CommandException;
-import connection.DatabaseConnection;
-import dataStructs.communication.ServerResponse;
+import connection.ConnectionWithServer;
+import dataStructs.communication.CommandExecutionResult;
+import dataStructs.communication.SessionByteArray;
+import dataStructs.communication.enums.ResponsePurpose;
 import studyGroupSpecific.StudyGroupEntityBuilder;
 import studyGroupSpecific.StudyGroupValidator;
 import validator.Validator;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
+import java.util.function.BiConsumer;
 
 public class ClientApplication {
+    static ConsoleManager consoleManager;
     public static void run() {
-        DatabaseConnection connection = new DatabaseConnection();
+        ConnectionWithServer connection = new ConnectionWithServer();
 
         try {
             System.out.println("Waiting for connection...");
@@ -37,42 +38,29 @@ public class ClientApplication {
         }
         connection.startMessageAcceptingThread();
 
-        String session = new Auth(connection).loginOrRegister();
+        SessionByteArray session = new Auth(connection).loginOrRegister();
         connection.setSession(session);
 
-        connection.addNewMessageHandler(ClientApplication::newMessageHandler);
-
-        Scanner scanner = new Scanner(System.in);
+        connection.addNewMessageHandler(getNewMessageHandler());
 
         CommandDataProcessor processor = getCommandDataProcessor();
         addClientSideCommands(processor, connection);
-        try {
-            while (true) {
-                try {
 
-                    String line = scanner.nextLine();
+        consoleManager = new ConsoleManager(processor, connection);
 
-                    if (processor.checkClientSide(line)) {
-                        continue;
-                    }
+        consoleManager.startCommandLoop();
 
-                    connection.sendRequest(processor.checkCommandAndCreateRequest(line));
-                } catch (CommandException exception) {
-                    System.err.println(exception.getMessage());
-                }
+    }
+
+    public static BiConsumer<CommandExecutionResult, ConnectionWithServer> getNewMessageHandler() {
+        return (response, client) -> {
+            response.printResult();
+            if (response.getResponsePurpose() == ResponsePurpose.CONFIRM_DELETE) {
+                consoleManager.waitingForConfirmation = true;
             }
-        } catch (NoSuchElementException e) {
-            System.err.println("Interactive mode ended.");
-        }
+        };
     }
 
-    public static void newMessageHandler(ServerResponse response) {
-        if (response.getCode() >= 200 && response.getCode() < 400) {
-            System.out.println(response.getText());
-        } else {
-            System.err.println(response.getText());
-        }
-    }
 
     private static CommandDataProcessor getCommandDataProcessor() {
         Validator validator = new StudyGroupValidator(new StudyGroupEntityBuilder());
@@ -98,7 +86,7 @@ public class ClientApplication {
         return processor;
     }
 
-    private static void addClientSideCommands(CommandDataProcessor processor, DatabaseConnection connection) {
+    private static void addClientSideCommands(CommandDataProcessor processor, ConnectionWithServer connection) {
         processor.addClientCommand(new HelpCommandImpl(processor));
         processor.addClientCommand(new HistoryCommandImpl(processor));
         processor.addClientCommand(new ExitDatabaseCommandImpl());

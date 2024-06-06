@@ -1,7 +1,10 @@
 package dataStructs.communication;
 
 import commands.CommandData;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -16,13 +19,13 @@ public class Request implements Serializable {
     List<Object> params;
 
     @Setter
-    String session;
+    SessionByteArray sessionByteArray;
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public Request(CommandData commandData, List<Object> params) {
         this.commandData = commandData;
         this.params = params;
     }
-
-    @Serial
-    private static final long serialVersionUID=1L;
 }

@@ -1,7 +1,8 @@
 package connection;
 
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
+import dataStructs.communication.SessionByteArray;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,25 +14,25 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @Getter
-public class DatabaseConnection {
+public class ConnectionWithServer {
     @Setter
-    String session = "0";
+    SessionByteArray session;
 
     private Socket socket;
 
     private Thread thread;
 
-    private final List<Consumer<ServerResponse>> messageAcceptedDelegate = new ArrayList<>();
+    private final List<BiConsumer<CommandExecutionResult, ConnectionWithServer>> messageAcceptedDelegate = new ArrayList<>();
 
     private ObjectOutputStream objectOutputStream;
 
     private boolean oneShotRequest;
-    private ServerResponse oneShotResponse;
+    private CommandExecutionResult oneShotResponse;
 
-    public void addNewMessageHandler(Consumer<ServerResponse> requestSupplier) {
+    public void addNewMessageHandler(BiConsumer<CommandExecutionResult, ConnectionWithServer> requestSupplier) {
         messageAcceptedDelegate.add(requestSupplier);
     }
 
@@ -65,7 +66,7 @@ public class DatabaseConnection {
                 while (!thread.isInterrupted()) {
                     Object obj = objectInputStream.readObject();
 
-                    if (!(obj instanceof ServerResponse serverResponse)) {
+                    if (!(obj instanceof CommandExecutionResult serverResponse)) {
                         continue;
                     }
 
@@ -77,9 +78,7 @@ public class DatabaseConnection {
                         continue;
                     }
 
-                    for (Consumer<ServerResponse> consumer : messageAcceptedDelegate) {
-                        consumer.accept(serverResponse);
-                    }
+                    messageAcceptedDelegate.forEach(consumer -> consumer.accept(serverResponse, this));
                 }
 
             } catch (IOException | ClassNotFoundException e) {
@@ -94,7 +93,7 @@ public class DatabaseConnection {
 
     public void sendRequest(Request ok) {
         try {
-            ok.setSession(session);
+            ok.setSessionByteArray(session);
             objectOutputStream.writeObject(ok);
             objectOutputStream.flush();
 
@@ -103,7 +102,8 @@ public class DatabaseConnection {
         }
     }
     final Object lock = new Object();
-    public ServerResponse sendOneShot(Request ok) {
+
+    public CommandExecutionResult sendOneShot(Request ok) {
 
         oneShotRequest = true;
         try {

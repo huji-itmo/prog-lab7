@@ -5,7 +5,6 @@ import dataStructs.exceptions.StringIsEmptyException;
 import dataStructs.exceptions.ValueIsNullException;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 
@@ -34,7 +33,7 @@ public class StudyGroup implements DatabaseEntity, Serializable {
     private long id; //Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
     private String name; //Поле не может быть null, Строка не может быть пустой
 
-    @ManyToOne(cascade = CascadeType.ALL, targetEntity = Coordinates.class, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, targetEntity = Coordinates.class, fetch = FetchType.EAGER)
     @JoinColumn(name = "coordinates_id", referencedColumnName="id")
     private Coordinates coordinates; //Поле не может быть null
     @Column(name = "creation_date")
@@ -54,11 +53,11 @@ public class StudyGroup implements DatabaseEntity, Serializable {
     @Type(type = "enum_postgressql")
     private Semester semester; //Поле может быть null
 
-    @ManyToOne(cascade = CascadeType.ALL, targetEntity = Person.class, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, targetEntity = Person.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "group_admin_id")
     private Person groupAdmin; //Поле может быть null
 
-    private long owner;
+    private String owner;
 
     public void setName(String name) throws StringIsEmptyException {
         Fields.checkName(name);

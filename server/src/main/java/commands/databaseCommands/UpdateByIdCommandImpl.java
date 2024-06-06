@@ -4,6 +4,7 @@ import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
 import dataStructs.StudyGroup;
 import dataStructs.communication.CommandExecutionResult;
+import dataStructs.communication.SessionByteArray;
 import database.StudyGroupDatabase;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class UpdateByIdCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, SessionByteArray session) throws CommandException {
         try {
             Long id = (Long) packedArgs.get(0);
 

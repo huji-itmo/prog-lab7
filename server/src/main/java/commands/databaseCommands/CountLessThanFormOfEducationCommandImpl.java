@@ -5,6 +5,7 @@ import commands.exceptions.CommandException;
 import commands.exceptions.IllegalCommandSyntaxException;
 import dataStructs.FormOfEducation;
 import dataStructs.communication.CommandExecutionResult;
+import dataStructs.communication.SessionByteArray;
 import database.StudyGroupDatabase;
 
 import java.util.List;
@@ -20,7 +21,7 @@ public class CountLessThanFormOfEducationCommandImpl extends DatabaseCommandImpl
     }
 
     @Override
-    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, SessionByteArray session) throws CommandException {
         try {
 
             FormOfEducation formOfEducation = Optional.ofNullable(packedArgs.get(0))

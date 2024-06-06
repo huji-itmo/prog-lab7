@@ -1,26 +1,24 @@
 package commands.clientSideCommands;
 
-import application.ClientApplication;
-import commands.CommandDataProcessor;
 import commands.databaseCommands.AddCommandData;
 import commands.databaseCommands.AddIfMinData;
 import commands.databaseCommands.GetMinStudentCountCommandData;
 import commands.exceptions.CommandException;
-import connection.DatabaseConnection;
+import connection.ConnectionWithServer;
 import dataStructs.StudyGroup;
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
 import validator.Validator;
 
 import java.util.List;
 
 public class AddIfMinCommandImpl extends ClientSideCommand{
 
-    private final DatabaseConnection connection;
+    private final ConnectionWithServer connection;
 
     private final Validator validator;
 
-    public AddIfMinCommandImpl(DatabaseConnection connection, Validator validator) {
+    public AddIfMinCommandImpl(ConnectionWithServer connection, Validator validator) {
         this.connection = connection;
         this.validator = validator;
         setCommandData(new AddIfMinData());
@@ -28,9 +26,13 @@ public class AddIfMinCommandImpl extends ClientSideCommand{
 
     @Override
     public String execute(String args) {
-        ServerResponse responseGetMin = connection.sendOneShot(new Request(new GetMinStudentCountCommandData(), List.of()));
+        CommandExecutionResult responseGetMin = connection.sendOneShot(new Request(new GetMinStudentCountCommandData(), List.of()));
 
-        ClientApplication.newMessageHandler(new ServerResponse(responseGetMin.getCode(), "Current min student count: " + responseGetMin.getText()));
+        if (responseGetMin.getCode() != 200) {
+            throw new CommandException(responseGetMin.getText());
+        }
+
+        System.out.println("Current min student count: " + responseGetMin.getText());
 
         List<Object> packedArguments = validator.checkSyntax(new AddIfMinData(), args);
 
@@ -42,9 +44,9 @@ public class AddIfMinCommandImpl extends ClientSideCommand{
             return "Student count is not min.";
         }
 
-        ServerResponse responseAddIfMin = connection.sendOneShot(new Request(new AddCommandData(), packedArguments));
+        CommandExecutionResult responseAddIfMin = connection.sendOneShot(new Request(new AddCommandData(), packedArguments));
 
-        if (responseAddIfMin.getCode() < 200 || responseAddIfMin.getCode() >= 300) {
+        if (responseAddIfMin.getCode() != 200) {
             throw new CommandException(responseAddIfMin.getText());
         }
 

@@ -1,4 +1,4 @@
-package dataStructs.communication;
+package dataStructs.exceptions;
 
 public class WrongResponseTypeAccess extends RuntimeException {
     public WrongResponseTypeAccess(String msg) {

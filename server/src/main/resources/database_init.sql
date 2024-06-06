@@ -15,8 +15,7 @@ CREATE TYPE semester_enum as enum('FOURTH', 'SIXTH', 'SEVENTH', 'EIGHTH');
 CREATE TYPE country_enum as enum('GERMANY', 'FRANCE', 'SPAIN', 'ITALY', 'JAPAN');
 
 CREATE TABLE users(
-    id serial PRIMARY KEY,
-    user_name varchar(30) NOT NULL,
+                      user_name varchar(30) PRIMARY KEY,
     password text NOT NULL
 );
 
@@ -57,5 +56,5 @@ CREATE TABLE study_groups(
     CONSTRAINT students_count_range CHECK ( students_count > 0 ),
     CONSTRAINT average_mark_range CHECK ( average_mark > 0 ),
 
-    owner bigint references users NOT NULL
+    owner char(30) references users NOT NULL
 );

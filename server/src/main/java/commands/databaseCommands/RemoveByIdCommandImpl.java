@@ -4,6 +4,7 @@ import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
 import commands.exceptions.IllegalCommandSyntaxException;
 import dataStructs.communication.CommandExecutionResult;
+import dataStructs.communication.SessionByteArray;
 import database.Database;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public class RemoveByIdCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
+    public CommandExecutionResult execute(List<Object> packedArgs, SessionByteArray session) throws CommandException {
         try {
             database.removeElementByPrimaryKey((Long) packedArgs.get(0), session);
 

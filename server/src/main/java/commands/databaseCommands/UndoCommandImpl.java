@@ -3,8 +3,10 @@ package commands.databaseCommands;
 import commands.DatabaseCommandImpl;
 import commands.exceptions.CommandException;
 import dataStructs.communication.CommandExecutionResult;
+import dataStructs.communication.SessionByteArray;
 import database.Database;
 
+import javax.persistence.EntityExistsException;
 import java.util.List;
 
 public class UndoCommandImpl extends DatabaseCommandImpl {
@@ -16,12 +18,18 @@ public class UndoCommandImpl extends DatabaseCommandImpl {
     }
 
     @Override
-    public CommandExecutionResult execute(List<Object> packedArgs, String session) throws CommandException {
-        boolean res = database.popUndoStackWithSession(session);
+    public CommandExecutionResult execute(List<Object> packedArgs, SessionByteArray session) throws CommandException {
 
-        if (!res) {
-            return CommandExecutionResult.success("Nothing to undo.");
+        try {
+            boolean res = database.popUndoStackWithSession(session);
+
+            if (!res) {
+                return CommandExecutionResult.success("Nothing to undo.");
+            }
+            return CommandExecutionResult.success("Success.");
+        } catch (EntityExistsException e) {
+            return CommandExecutionResult.badRequest("Can't delete entity because it already exsists.");
         }
-        return CommandExecutionResult.success("Success.");
+
     }
 }

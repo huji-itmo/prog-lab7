@@ -2,6 +2,7 @@ package connection;
 
 import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
+import dataStructs.communication.SessionByteArray;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,10 +11,10 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.SecureRandom;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,11 +25,14 @@ public class Server {
         logger.setLevel(Level.FINEST);
     }
     private final ServerSocket serverSocket;
-
     @Setter
     private Function<Request, CommandExecutionResult> executeRequest;
     @Getter
-    Map<String, Long> sessionToClientIdMap = new HashMap<>();
+    Map<SessionByteArray, ClientHandler> sessionToClientHandlerMap = Collections.synchronizedMap(new HashMap<>());
+    @Setter
+    private Consumer<SessionByteArray> onNewSession;
+    @Setter
+    private Consumer<SessionByteArray> onSessionEnd;
 
     public Server(int port) {
         try {
@@ -46,13 +50,7 @@ public class Server {
             try {
                 Socket socket = serverSocket.accept();
 
-                ClientHandler clientHandler = new ClientHandler(new ConnectionHandlerLogProxy(socket), this);
-
-                clientHandler.setRequestExecuteFunction(executeRequest);
-                clientHandler.setOnThreadException((exception, deadClientHandler) -> {
-                    logger.severe(exception.getMessage());
-                    sessionToClientIdMap.remove(deadClientHandler.getSession());
-                });
+                ClientHandler clientHandler = createClient(socket);
 
                 logger.info("Client " + socket.getInetAddress() + " connected");
 
@@ -62,17 +60,35 @@ public class Server {
         }
     }
 
-    public String createNewSessionWithClientId(Long clientId) {
-        String session = generateSecureSession();
+    public SessionByteArray createNewSession(ClientHandler clientHandler) {
+        SessionByteArray session = generateSecureSession();
 
-        sessionToClientIdMap.put(session, clientId);
+        sessionToClientHandlerMap.put(session, clientHandler);
         return session;
     }
 
     SecureRandom random = new SecureRandom();
-    private String generateSecureSession() {
+
+    private SessionByteArray generateSecureSession() {
         byte[] bytes = new byte[16];
         random.nextBytes(bytes);
-        return new String(bytes);
+        return new SessionByteArray(bytes);
+    }
+
+    public ClientHandler createClient(Socket socket) {
+        ClientHandler clientHandler = new ClientHandler(new ConnectionHandlerLogProxy(socket), this);
+
+        clientHandler.setOnNewSession((session, handler) -> {
+            sessionToClientHandlerMap.put(session, handler);
+            onNewSession.accept(session);
+        });
+        clientHandler.setRequestExecuteFunction(executeRequest);
+        clientHandler.setOnThreadException((exception, deadClientHandler) -> {
+            logger.severe(exception.getMessage());
+            sessionToClientHandlerMap.remove(deadClientHandler.getSession());
+            onSessionEnd.accept(deadClientHandler.getSession());
+        });
+
+        return clientHandler;
     }
 }

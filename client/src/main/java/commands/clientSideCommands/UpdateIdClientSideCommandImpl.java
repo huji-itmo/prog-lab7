@@ -4,18 +4,18 @@ import commands.databaseCommands.ExistsByIdCommandData;
 import commands.databaseCommands.UpdateByIdCommandData;
 import commands.exceptions.CommandException;
 import commands.exceptions.IllegalCommandSyntaxException;
-import connection.DatabaseConnection;
+import connection.ConnectionWithServer;
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
 import validator.Validator;
 
 import java.util.List;
 
 public class UpdateIdClientSideCommandImpl extends ClientSideCommand {
-    private final DatabaseConnection connection;
+    private final ConnectionWithServer connection;
     private final Validator validator;
 
-    public UpdateIdClientSideCommandImpl(DatabaseConnection connection, Validator validator) {
+    public UpdateIdClientSideCommandImpl(ConnectionWithServer connection, Validator validator) {
         this.connection = connection;
         this.validator = validator;
         setCommandData(new UpdateByIdCommandData());
@@ -33,17 +33,17 @@ public class UpdateIdClientSideCommandImpl extends ClientSideCommand {
         try {
             Long idValue = Long.parseLong(id);
 
-            ServerResponse responseExists = connection.sendOneShot(new Request(new ExistsByIdCommandData(), List.of(idValue)));
+            CommandExecutionResult responseExists = connection.sendOneShot(new Request(new ExistsByIdCommandData(), List.of(idValue)));
 
-            if (responseExists.getText().equals("false")) {
+            if (!responseExists.getBoolean()) {
                 throw new CommandException("Element with id " + idValue + " doesn't exists!");
             }
 
             List<Object> packedArguments = validator.checkSyntax(new UpdateByIdCommandData(), args);
 
-            ServerResponse responseUpdateById = connection.sendOneShot(new Request(new UpdateByIdCommandData(), packedArguments));
+            CommandExecutionResult responseUpdateById = connection.sendOneShot(new Request(new UpdateByIdCommandData(), packedArguments));
 
-            if (responseUpdateById.getCode() < 200 || responseUpdateById.getCode() >= 300) {
+            if (responseUpdateById.getCode() != 200) {
                 throw new CommandException(responseUpdateById.getText());
             }
 

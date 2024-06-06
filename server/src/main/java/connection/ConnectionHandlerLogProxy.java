@@ -1,7 +1,7 @@
 package connection;
 
+import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
-import dataStructs.communication.ServerResponse;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -18,10 +18,10 @@ public class ConnectionHandlerLogProxy extends ConnectionHandler {
     }
 
     @Override
-    public void sendResponseBlocking(ServerResponse message) throws IOException {
+    public void sendResponseBlocking(CommandExecutionResult message) throws IOException {
         super.sendResponseBlocking(message);
 
-        logger.info("Sent message to "+ getCurrentSocket().getInetAddress() + ".\n" + message);
+        logger.info("Sent message to " + currentSocket.getInetAddress() + ".\n" + message);
 
     }
 
@@ -29,7 +29,7 @@ public class ConnectionHandlerLogProxy extends ConnectionHandler {
         Request request = super.readRequestBlocking();
 
         logger.info("-------------------------------------------------------------------------");
-        logger.info("Got request from"+ getCurrentSocket().getInetAddress() + ".\n" + request);
+        logger.info("Got request from" + currentSocket.getInetAddress() + ".\n" + request);
 
         return request;
     }

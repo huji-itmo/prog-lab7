@@ -1,11 +1,9 @@
 package database;
 
-import database.undo.UndoLog;
+import dataStructs.communication.SessionByteArray;
 
-import java.util.Comparator;
+import javax.persistence.EntityExistsException;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * interface for general-purpose database. Should be created with decorator.
@@ -14,34 +12,26 @@ import java.util.function.Function;
  * @param <K> - class of primary key
  */
 public interface Database<T, K> {
-    /**
-     * @param id primary key
-     * @return the list of deleted elements.
-     */
-    List<T> removeGreaterOrLowerThanPrimaryKey(K id, boolean greater, String sessionStr);
+    List<T> removeGreaterOrLowerThanPrimaryKey(K id, boolean greater, SessionByteArray sessionStr);
 
     List<T> getElementsDescendingByPrimaryKey();
 
     String getInfo();
-    /**
-     * Adds a new element and updates the last id.
-     *
-     * @param element element
-     */
-    void addElement(T element, String sessionStr);
+
+    void addElement(T element, SessionByteArray sessionStr);
     List<T> getElements();
-    T updateElementByPrimaryKey(K id, T new_element, String sessionStr) throws IllegalArgumentException;
-    T removeElementByPrimaryKey(K id, String sessionStr) throws IllegalArgumentException;
+
+    T updateElementByPrimaryKey(K id, T new_element, SessionByteArray sessionStr) throws IllegalArgumentException;
+
+    T removeElementByPrimaryKey(K id, SessionByteArray sessionStr) throws IllegalArgumentException;
     /**
      * Clears the collection and resets the last id counter.
      */
-    void clear(String sessionStr);
-
-    void pushToUndoStack(UndoLog<T> log, String session);
+    void clear(SessionByteArray sessionStr);
 
     boolean existsById(K id);
 
-    long registerNewUser(String userName, String password);
+    String registerNewUser(String userName, String password);
 
-    boolean popUndoStackWithSession(String session);
+    boolean popUndoStackWithSession(SessionByteArray session) throws EntityExistsException;
 }
