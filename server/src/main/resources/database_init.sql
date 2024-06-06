@@ -43,7 +43,7 @@ CREATE TABLE people(
 CREATE TABLE study_groups(
     id serial PRIMARY KEY,
     name varchar(30) NOT NULL,
-    coordinates_id bigint references coordinates NOT NULL,
+    coordinates_id bigint references coordinates NOT NULL UNIQUE,
     creation_date date NOT NULL,
     students_count integer,
 
@@ -51,7 +51,7 @@ CREATE TABLE study_groups(
 
     form_of_education form_of_education_enum,
     semester semester_enum,
-    group_admin_id bigint references people
+    group_admin_id bigint references people UNIQUE,
 
     CONSTRAINT students_count_range CHECK ( students_count > 0 ),
     CONSTRAINT average_mark_range CHECK ( average_mark > 0 ),

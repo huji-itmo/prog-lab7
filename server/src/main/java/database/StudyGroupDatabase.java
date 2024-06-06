@@ -11,12 +11,9 @@ import lombok.Setter;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
-import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -41,12 +38,16 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         try (Session session = factory.openSession()) {
 
             EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
+            entityManager.getTransaction().begin();
             CriteriaQuery<StudyGroup> query = entityManager.getCriteriaBuilder().createQuery(StudyGroup.class);
 
             List<StudyGroup> list = session.createQuery(query.select(query.from(StudyGroup.class))).getResultList();
             list.forEach(group -> group.setOwner(group.getOwner().strip()));
+            entityManager.flush();
             list.forEach(System.out::println);
             getCollection().addAll(list);
+
+            entityManager.getTransaction().commit();
         }
 
         this.factory = factory;
@@ -73,12 +74,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
                 return;
             }
         }
-
-        try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            permittedToDelete.forEach(session::delete);
-            session.getTransaction().commit();
-        }
+        deleteElements(permittedToDelete);
 
         permittedToDelete.forEach(getCollection()::remove);
 
@@ -95,13 +91,11 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
     public List<StudyGroup> removeGreaterOrLowerThanPrimaryKey(Long id, boolean greater, SessionByteArray sessionStr) {
         String userName = sessionToUserNameFunction.apply(sessionStr);
 
-        List<StudyGroup> elementsToDelete = getCollection()
-                .stream()
+        List<StudyGroup> elementsToDelete = getCollection().stream()
                 .filter(studyGroup -> (studyGroup.getId() > id) == greater)
                 .toList();
 
-        List<StudyGroup> permittedToDelete = elementsToDelete
-                .stream()
+        List<StudyGroup> permittedToDelete = elementsToDelete.stream()
                 .filter(studyGroup -> studyGroup.getOwner().equals(userName))
                 .toList();
 
@@ -111,25 +105,11 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
             }
         }
 
-        try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
-            elementsToDelete.forEach(entityManager::remove);
-            session.getTransaction().commit();
-        }
-
-        elementsToDelete.forEach(getCollection()::remove);
+        deleteElements(permittedToDelete);
 
         pushToUndoStack(UndoLog.deletedElements(elementsToDelete), sessionStr);
 
         return elementsToDelete;
-    }
-
-    @Override
-    public List<StudyGroup> getElementsDescendingByPrimaryKey() {
-        return getCollection().stream()
-                .sorted(Comparator.comparingLong(StudyGroup::getId).reversed())
-                .toList();
     }
 
     @Override
@@ -142,7 +122,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Element with id: " + id + " doesn't exist."));
 
-        if (deleted.getOwner().equals(userName)) {
+        if (!deleted.getOwner().equals(userName)) {
             throw new IllegalArgumentException("Can't change this element because it belongs to a different user.");
         }
 
@@ -150,14 +130,14 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         new_element.setOwner(userName);
 
         try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            session.merge(new_element);
-            session.getTransaction().commit();
+            EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
+            entityManager.getTransaction().begin();
+            getCollection().add(entityManager.merge(new_element));
+            entityManager.flush();
+            entityManager.getTransaction().commit();
         }
 
         getCollection().remove(deleted);
-        getCollection().add(new_element);
-
 
         pushToUndoStack(UndoLog.changedElement(new_element,deleted), sessionStr);
 
@@ -176,13 +156,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
             throw new IllegalArgumentException("Can't remove this element because it belongs to a different user.");
         }
 
-        try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            session.delete(deleted);
-            session.getTransaction().commit();
-        }
-
-        getCollection().remove(deleted);
+        deleteElements(List.of(deleted));
 
         pushToUndoStack(UndoLog.deletedElements(deleted),sessionStr);
 
@@ -194,11 +168,11 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         group.setOwner(sessionToUserNameFunction.apply(sessionStr).strip());
 
         try (Session session = factory.openSession()) {
-            session.beginTransaction();
-            Long id = (Long) session.save(group);
-            session.getTransaction().commit();
-
-            group.setId(id);
+            EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
+            entityManager.getTransaction().begin();
+            entityManager.persist(group);
+            entityManager.flush();
+            entityManager.getTransaction().commit();
         }
 
         getCollection().add(group);
@@ -206,12 +180,25 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         pushToUndoStack(UndoLog.addedElements(group), sessionStr);
     }
 
+
+    public void deleteElements(Iterable<StudyGroup> elements) {
+        try (Session session = factory.openSession()) {
+            EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
+            entityManager.getTransaction().begin();
+            elements.forEach(entityManager::remove);
+            entityManager.flush();
+            entityManager.getTransaction().commit();
+        }
+        elements.forEach(getCollection()::remove);
+    }
+
+    //----------------------------UNDO------------------------------------
     @Override
-    public List<StudyGroup> getElements() {
-        return getCollection()
-                .stream()
-                .sorted(Comparator.comparingLong(StudyGroup::getId))
-                .toList();
+    public boolean popUndoStackWithSession(SessionByteArray session) {
+
+        Stack<UndoLog<StudyGroup>> undoLogsByClient = getUndoLogStacksBySession().get(session);
+
+        return undo(undoLogsByClient.pop());
     }
 
     private void pushToUndoStack(UndoLog<StudyGroup> log, SessionByteArray session) {
@@ -233,36 +220,31 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         };
 
         BiConsumer<StudyGroup, EntityManager> adder = (studyGroup, entityManager) -> {
-            getCollection().add(studyGroup);
-            entityManager.merge(studyGroup);
+            getCollection().add(entityManager.merge(studyGroup));
         };
 
         try (Session session = factory.openSession())
         {
             EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
-            session.beginTransaction();
+            entityManager.getTransaction().begin();
 
             log.getChangesList().forEach(change -> {
                 if (change.isAdded()) {
                     remover.accept(change.getElement(), entityManager);
                 } else {
-                    session.save(change.getElement());
                     adder.accept(change.getElement(), entityManager);
                 }
             });
 
-            session.getTransaction().commit();
-        } catch (EntityExistsException e) {
-            throw e;
+            entityManager.flush();
+            entityManager.getTransaction().commit();
         }
 
         return true;
     }
 
-    @Override
-    public boolean existsById(Long id) {
-        return false;
-    }
+    //----------------------------LOGIN AND REGISTER------------------------------------
+
 
     @Override
     public String registerNewUser(String userName, String password) {
@@ -281,26 +263,13 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         }
     }
 
-    @Override
-    public boolean popUndoStackWithSession(SessionByteArray session) {
-
-        Stack<UndoLog<StudyGroup>> undoLogsByClient = getUndoLogStacksBySession().get(session);
-
-        return undo(undoLogsByClient.pop());
-    }
-
     public boolean checkAlreadyExistsUser(String userName) {
         try (Session session = factory.openSession()) {
-            session.beginTransaction();
+            EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
 
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<User> query = builder.createQuery(User.class);
-            Root<User> root =query.from(User.class);
+            User user = entityManager.find(User.class, userName);
 
-             query.select(root).where(builder.and(
-                     builder.equal(root.get("userName"), userName)));
-
-             return !(session.createQuery(query).getResultList().isEmpty());
+            return user != null;
         }
     }
 
@@ -308,21 +277,20 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
         try (Session session = factory.openSession()) {
             EntityManager entityManager = session.getEntityManagerFactory().createEntityManager();
 
-            CriteriaBuilder builder =entityManager.getCriteriaBuilder();
-            CriteriaQuery<User> query = builder.createQuery(User.class);
-            Root<User> root =query.from(User.class);
+            User user = entityManager.getReference(User.class, userName);
 
-            query.select(root).where(builder.and(
-                    builder.equal(root.get("userName"), userName),
-                    builder.equal(root.get("password"), password)));
-
-            User user = entityManager.createQuery(query).getSingleResult();
+            if (!user.getPassword().equals(password)) {
+                throw new CommandException("Wrong user name or password!");
+            }
 
             return user.getUserName();
-        } catch (NoResultException e) {
+        } catch (EntityNotFoundException e) {
             throw new CommandException("Wrong user name or password!");
         }
     }
+
+
+    //------------------------DATA OPERATIONS-----------------------------
 
     public OptionalLong getMinStudentCount() {
         return getCollection()
@@ -346,5 +314,25 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
                 .filter(group -> group.getFormOfEducation() != null)
                 .filter(group -> group.getFormOfEducation().ordinal() < formOfEducation.ordinal())
                 .count();
+    }
+
+    @Override
+    public List<StudyGroup> getElementsDescendingByPrimaryKey() {
+        return getCollection().stream()
+                .sorted(Comparator.comparingLong(StudyGroup::getId).reversed())
+                .toList();
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        return getCollection().stream().anyMatch(studyGroup -> studyGroup.getId() == id);
+    }
+
+    @Override
+    public List<StudyGroup> getElements() {
+        return getCollection()
+                .stream()
+                .sorted(Comparator.comparingLong(StudyGroup::getId))
+                .toList();
     }
 }

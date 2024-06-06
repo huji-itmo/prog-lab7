@@ -114,7 +114,7 @@ public class CommandExecutionResult implements Serializable {
     }
 
     public Long getLong() {
-        if (responseType != ResponseType.BOOLEAN) {
+        if (responseType != ResponseType.NUMBER_LONG) {
             throw new WrongResponseTypeAccess("Wrong method used to access response! Expected: " + responseType.name());
         }
 

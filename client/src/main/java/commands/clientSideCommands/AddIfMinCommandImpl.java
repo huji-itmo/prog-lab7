@@ -32,7 +32,7 @@ public class AddIfMinCommandImpl extends ClientSideCommand{
             throw new CommandException(responseGetMin.getText());
         }
 
-        System.out.println("Current min student count: " + responseGetMin.getText());
+        System.out.println("Current min student count: " + responseGetMin.getLong());
 
         List<Object> packedArguments = validator.checkSyntax(new AddIfMinData(), args);
 
@@ -40,7 +40,7 @@ public class AddIfMinCommandImpl extends ClientSideCommand{
             throw new CommandException("wtf");
         }
 
-        if (newGroup.getStudentsCount() >= Integer.parseInt(responseGetMin.getText())) {
+        if (Integer.toUnsignedLong(newGroup.getStudentsCount()) >= responseGetMin.getLong()) {
             return "Student count is not min.";
         }
 

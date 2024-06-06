@@ -86,7 +86,7 @@ public class ConnectionWithServer {
                 stop();
             }
         });
-
+        thread.setDaemon(true);
         thread.start();
 
     }
