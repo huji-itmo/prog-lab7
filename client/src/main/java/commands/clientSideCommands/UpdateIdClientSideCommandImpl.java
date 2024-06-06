@@ -1,6 +1,7 @@
 package commands.clientSideCommands;
 
-import commands.databaseCommands.ExistsByIdCommandData;
+
+import commands.databaseCommands.ExistsAndBelongsToMeCommandData;
 import commands.databaseCommands.UpdateByIdCommandData;
 import commands.exceptions.CommandException;
 import commands.exceptions.IllegalCommandSyntaxException;
@@ -33,10 +34,10 @@ public class UpdateIdClientSideCommandImpl extends ClientSideCommand {
         try {
             Long idValue = Long.parseLong(id);
 
-            CommandExecutionResult responseExists = connection.sendOneShot(new Request(new ExistsByIdCommandData(), List.of(idValue)));
+            CommandExecutionResult responseExists = connection.sendOneShot(new Request(new ExistsAndBelongsToMeCommandData(), List.of(idValue)));
 
-            if (!responseExists.getBoolean()) {
-                throw new CommandException("Element with id " + idValue + " doesn't exists!");
+            if (responseExists.getCode() != 200) {
+                throw new CommandException(responseExists.getText());
             }
 
             List<Object> packedArguments = validator.checkSyntax(new UpdateByIdCommandData(), args);

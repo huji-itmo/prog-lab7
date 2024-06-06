@@ -25,8 +25,7 @@ public class RemoveGreaterCommandImpl extends DatabaseCommandImpl {
 
             return CommandExecutionResult.success("Removed " + count + " elements.");
 
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException | CommandException e) {
             return CommandExecutionResult.badRequest(e.getMessage());
         }
     }

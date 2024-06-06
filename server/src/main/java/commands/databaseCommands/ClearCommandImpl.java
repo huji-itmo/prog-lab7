@@ -18,7 +18,12 @@ public class ClearCommandImpl extends DatabaseCommandImpl {
 
     @Override
     public CommandExecutionResult execute(List<Object> packedArgs, SessionByteArray session) throws CommandException {
-        database.clear(session);
-        return CommandExecutionResult.success("Cleared.");
+        try {
+            database.clear(session);
+            return CommandExecutionResult.success("Cleared.");
+
+        } catch (CommandException e) {
+            return CommandExecutionResult.badRequest(e.getMessage());
+        }
     }
 }

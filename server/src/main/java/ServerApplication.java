@@ -1,7 +1,7 @@
+import Server.Server;
 import commands.CommandImplMap;
 import commands.databaseCommands.ConfirmCommandData;
 import connection.ClientHandler;
-import connection.Server;
 import dataStructs.StudyGroup;
 import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
@@ -60,7 +60,7 @@ public class ServerApplication {
             try {
                 clientHandler.getHandler().sendResponseBlocking(confirmMessage);
 
-                Request request = clientHandler.interceptRequestBlocking();
+                Request request = clientHandler.getHandler().readRequestBlocking();
 
                 if (request.getCommandData().getClass() == ConfirmCommandData.class) {
                     return true;
@@ -89,8 +89,6 @@ public class ServerApplication {
 
         server.setOnNewSession((sessionString -> {
             database.getUndoLogStacksBySession().put(sessionString, new Stack<>());
-            System.out.println("\n\n\n\n\nn\n\n\n");
-
             System.out.println("Current sessions:");
             database.getUndoLogStacksBySession().keySet().forEach(System.out::println);
         }));

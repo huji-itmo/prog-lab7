@@ -1,5 +1,6 @@
 package database;
 
+import Server.PasswordHasher;
 import commands.exceptions.CommandException;
 import dataStructs.FormOfEducation;
 import dataStructs.StudyGroup;
@@ -8,6 +9,7 @@ import dataStructs.communication.SessionByteArray;
 import database.undo.UndoLog;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.ObjectNotFoundException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
@@ -69,8 +71,12 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
                 .filter(studyGroup -> studyGroup.getOwner().equals(userName))
                 .toList();
 
+        if (permittedToDelete.isEmpty()) {
+            throw new CommandException("Can't delete any elements because they have different owner!");
+        }
+
         if (permittedToDelete.size() != elementsToDelete.size()) {
-            if (!confirmDelete.confirm(elementsToDelete, sessionStr)) {
+            if (!confirmDelete.confirm(permittedToDelete, sessionStr)) {
                 return;
             }
         }
@@ -95,9 +101,17 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
                 .filter(studyGroup -> (studyGroup.getId() > id) == greater)
                 .toList();
 
+        if (elementsToDelete.isEmpty()) {
+            throw new CommandException("List of those elements is empty!");
+        }
+
         List<StudyGroup> permittedToDelete = elementsToDelete.stream()
                 .filter(studyGroup -> studyGroup.getOwner().equals(userName))
                 .toList();
+
+        if (permittedToDelete.isEmpty()) {
+            throw new CommandException("Can't delete any elements because they have different owner!");
+        }
 
         if (permittedToDelete.size() != elementsToDelete.size()) {
             if (!confirmDelete.confirm(permittedToDelete, sessionStr)) {
@@ -198,6 +212,10 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
         Stack<UndoLog<StudyGroup>> undoLogsByClient = getUndoLogStacksBySession().get(session);
 
+        if (undoLogsByClient.isEmpty()) {
+            return false;
+        }
+
         return undo(undoLogsByClient.pop());
     }
 
@@ -254,7 +272,10 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
         try (Session session = factory.openSession()) {
             session.beginTransaction();
-            User user = User.builder().userName(userName).password(password).build();
+            User user = User.builder()
+                    .userName(userName)
+                    .password(PasswordHasher.hashPassword(password))
+                    .build();
 
             session.save(user);
             session.getTransaction().commit();
@@ -279,12 +300,12 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
             User user = entityManager.getReference(User.class, userName);
 
-            if (!user.getPassword().equals(password)) {
+            if (!user.getPassword().equals(PasswordHasher.hashPassword(password))) {
                 throw new CommandException("Wrong user name or password!");
             }
 
             return user.getUserName();
-        } catch (EntityNotFoundException e) {
+        } catch (EntityNotFoundException | ObjectNotFoundException e) {
             throw new CommandException("Wrong user name or password!");
         }
     }
@@ -334,5 +355,12 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
                 .stream()
                 .sorted(Comparator.comparingLong(StudyGroup::getId))
                 .toList();
+    }
+
+    public boolean doesBelongToUserUsingSession(Long id, SessionByteArray sessionByteArray) {
+        return getCollection()
+                .stream()
+                .anyMatch(studyGroup -> studyGroup.getId() == id
+                        && studyGroup.getOwner().equals(sessionToUserNameFunction.apply(sessionByteArray)));
     }
 }

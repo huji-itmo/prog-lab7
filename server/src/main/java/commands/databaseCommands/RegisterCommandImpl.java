@@ -20,7 +20,7 @@ public class RegisterCommandImpl extends DatabaseCommandImpl {
     @Override
     public CommandExecutionResult execute(List<Object> packedArgs, SessionByteArray session) throws CommandException {
         try {
-            String newUserName = database.registerNewUser((String) packedArgs.get(0), (String) packedArgs.get(0));
+            String newUserName = database.registerNewUser((String) packedArgs.get(0), (String) packedArgs.get(1));
 
             return CommandExecutionResult.success(newUserName);
         } catch (CommandException e) {

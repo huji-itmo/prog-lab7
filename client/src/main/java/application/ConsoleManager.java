@@ -1,5 +1,6 @@
 package application;
 
+import commands.CommandData;
 import commands.CommandDataProcessor;
 import commands.databaseCommands.ConfirmCommandData;
 import commands.databaseCommands.DeclineCommandData;
@@ -45,11 +46,17 @@ public class ConsoleManager {
                         System.out.println("Please write (Y/N)");
                         continue;
                     }
+                    CommandData data = null;
                     if (accept.get()) {
-                        connection.sendRequest(new Request(new ConfirmCommandData(), List.of()));
+                        data = new ConfirmCommandData();
                     } else {
-                        connection.sendRequest(new Request(new DeclineCommandData(), List.of()));
+                        data = new DeclineCommandData();
+
                     }
+
+                    Request request = new Request(data, List.of());
+                    connection.sendRequest(request);
+
                     waitingForConfirmation = false;
 
                 } catch (CommandException exception) {

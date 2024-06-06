@@ -26,6 +26,8 @@ public class RemoveLowerCommandImpl extends DatabaseCommandImpl {
         }
         catch (NumberFormatException e) {
             return CommandExecutionResult.badRequest("id should be a number!");
+        } catch (CommandException e) {
+            return CommandExecutionResult.badRequest(e.getMessage());
         }
     }
 }

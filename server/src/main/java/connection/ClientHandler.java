@@ -1,5 +1,6 @@
 package connection;
 
+import Server.Server;
 import commands.auth.LoginCommandData;
 import commands.auth.RegisterCommandData;
 import dataStructs.communication.CommandExecutionResult;
@@ -29,11 +30,6 @@ public class ClientHandler {
     @Setter
     private BiConsumer<SessionByteArray, ClientHandler> onNewSession;
 
-
-    private Request requestBuffer = null;
-    private boolean isIntercepting = false;
-    private final Object lock = new Object();
-
     public ClientHandler(ConnectionHandler handler, Server server) {
         this.handler = handler;
         this.server = server;
@@ -59,15 +55,6 @@ public class ClientHandler {
 
                 while (!thread.isInterrupted()) {
                     Request request = handler.readRequestBlocking();
-
-                    if (isIntercepting) {
-                        synchronized (lock) {
-                            requestBuffer = request;
-                            lock.notifyAll();
-                        }
-
-                        continue;
-                    }
 
                     if (!request.getSessionByteArray().equals(getSession())) {
                         handler.sendResponseBlocking(CommandExecutionResult.badRequest("Wrong session parameter. Sussy baka impostor"));
@@ -110,26 +97,4 @@ public class ClientHandler {
         handler.sendResponseBlocking(requestExecuteFunction.apply(request));
     }
 
-    public Request interceptRequestBlocking() {
-        isIntercepting = true;
-        try {
-
-            synchronized (lock) {
-                lock.wait();
-                //wait for request to come
-                if (requestBuffer != null) {
-                    Request request = requestBuffer;
-                    requestBuffer = null;
-                    isIntercepting = false;
-                    return request;
-                }
-
-                throw new RuntimeException();
-
-            }
-
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

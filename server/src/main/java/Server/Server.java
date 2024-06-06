@@ -1,5 +1,7 @@
-package connection;
+package Server;
 
+import connection.ClientHandler;
+import connection.ConnectionHandlerLogProxy;
 import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
 import dataStructs.communication.SessionByteArray;
@@ -20,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Server {
-    private static final Logger logger = Logger.getLogger("connection.Server");
+    private static final Logger logger = Logger.getLogger("Server.Server");
     static {
         logger.setLevel(Level.FINEST);
     }

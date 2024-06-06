@@ -24,6 +24,7 @@ public class CommandImplMap {
         putCommand(new UpdateByIdCommandImpl(database));
         putCommand(new ExistsIdCommandImpl(database));
         putCommand(new GetMinStudentCountCommandImpl(database));
+        putCommand(new ExistsAndBelongsToMeCommandImpl(database));
 
         putCommand(new RegisterCommandImpl(database));
         putCommand(new LoginCommandImpl(database));
