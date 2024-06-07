@@ -84,7 +84,7 @@ public class ServerApplication {
     }
 
     public Server createServer(int port, StudyGroupDatabase database) {
-        Server server = new Server(5252);
+        Server server = new Server(port);
         server.setExecuteRequest(getMessageHandler());
 
         server.setOnNewSession((sessionString -> {
