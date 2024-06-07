@@ -68,3 +68,15 @@ tasks.create("deploy") {
         }
     }
 }
+
+tasks.register<Jar>("export") {
+    manifest {
+        attributes["Main-Class"] = "Main"
+    }
+    archiveBaseName.set(project.name)
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get())
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE;
+
+    destinationDirectory.set(file("C:/code/itmo/prog/bin"))
+}

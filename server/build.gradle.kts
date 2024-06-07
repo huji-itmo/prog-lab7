@@ -28,7 +28,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<Jar>() {
+tasks.withType<Jar> {
     manifest {
         attributes["Main-Class"] = "Main"
     }
@@ -38,8 +38,6 @@ tasks.withType<Jar>() {
             .map(::zipTree) // OR .map { zipTree(it) }
     from(dependencies)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-//    dependsOn("shared:jar")
 }
 
 tasks.withType<JavaCompile> {
@@ -52,6 +50,19 @@ tasks.compileJava{
 
 tasks.javadoc {
     options.encoding = "UTF-8"
+}
+
+
+tasks.register<Jar>("export") {
+    manifest {
+        attributes["Main-Class"] = "Main"
+    }
+    archiveBaseName.set(project.name)
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get())
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    destinationDirectory.set(file("C:/code/itmo/prog/bin"))
 }
 
 tasks.create("deploy") {

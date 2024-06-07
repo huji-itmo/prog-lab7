@@ -4,7 +4,6 @@ plugins {
     id("java-library")
     id("io.freefair.lombok") version "8.6"
 }
-version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -18,6 +17,27 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.30")
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks.withType<JavaCompile> {
+    options.compilerArgs.addAll(arrayOf("--release", "17"))
+}
+
+tasks.compileJava {
+    options.encoding = "UTF-8"
+}
+
+tasks.javadoc {
+    options.encoding = "UTF-8"
+}
+
+
+tasks.register<Jar>("export") {
+    manifest {
+        attributes["Main-Class"] = "Main"
+    }
+    archiveBaseName.set(project.name)
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get())
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    destinationDirectory.set(file("C:/code/itmo/prog/bin"))
 }
