@@ -8,13 +8,14 @@ import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
 import dataStructs.communication.SessionByteArray;
 import lombok.AllArgsConstructor;
+import password.PasswordHasher;
 
 import java.io.Console;
 import java.util.List;
 import java.util.Scanner;
 
 @AllArgsConstructor
-public class Auth {
+public class CLIAuth {
 
     private final ConnectionWithServer connection;
 
@@ -93,6 +94,6 @@ public class Auth {
             password = new String(console.readPassword());
         }
 
-        return List.of(username, password);
+        return List.of(username, PasswordHasher.hashPassword(password));
     }
 }

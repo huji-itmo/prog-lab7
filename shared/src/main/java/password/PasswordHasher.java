@@ -1,4 +1,4 @@
-package Server;
+package password;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -18,7 +18,7 @@ public class PasswordHasher {
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             System.err.println(e.getMessage());
-            return null;
+            return password;
         }
     }
 }

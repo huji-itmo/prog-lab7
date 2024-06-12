@@ -1,6 +1,5 @@
 package database;
 
-import Server.PasswordHasher;
 import commands.exceptions.CommandException;
 import dataStructs.FormOfEducation;
 import dataStructs.StudyGroup;
@@ -12,6 +11,7 @@ import lombok.Setter;
 import org.hibernate.ObjectNotFoundException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import password.PasswordHasher;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
@@ -75,10 +75,8 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
             throw new CommandException("Can't delete any elements because they have different owner!");
         }
 
-        if (permittedToDelete.size() != elementsToDelete.size()) {
-            if (!confirmDelete.confirm(permittedToDelete, sessionStr)) {
-                return;
-            }
+        if (!confirmDelete.confirm(permittedToDelete, sessionStr)) {
+            throw new CommandException("User denied!");
         }
         deleteElements(permittedToDelete);
 

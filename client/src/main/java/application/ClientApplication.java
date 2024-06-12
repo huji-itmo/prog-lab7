@@ -38,7 +38,7 @@ public class ClientApplication {
         }
         connection.startMessageAcceptingThread();
 
-        SessionByteArray session = new Auth(connection).loginOrRegister();
+        SessionByteArray session = new CLIAuth(connection).loginOrRegister();
         connection.setSession(session);
 
         connection.addNewMessageHandler(getNewMessageHandler());

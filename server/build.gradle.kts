@@ -54,6 +54,7 @@ tasks.javadoc {
 
 
 tasks.register<Jar>("export") {
+    dependsOn("jar")
     manifest {
         attributes["Main-Class"] = "Main"
     }
