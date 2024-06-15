@@ -2,16 +2,21 @@ import Server.Server;
 import commands.CommandImplMap;
 import commands.databaseCommands.ConfirmCommandData;
 import connection.ClientHandler;
+import connection.ConnectionHandler;
 import dataStructs.StudyGroup;
 import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
 import dataStructs.communication.SessionByteArray;
+import dataStructs.communication.enums.ResponsePurpose;
+import dataStructs.communication.enums.ResponseType;
+import dataStructs.undo.TransactionLog;
 import database.ConfirmDeleteInterface;
 import database.StudyGroupDatabase;
 import org.hibernate.SessionFactory;
 
 import java.io.IOException;
 import java.util.Stack;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 
@@ -74,10 +79,28 @@ public class ServerApplication {
         };
     }
 
-    public StudyGroupDatabase createDatabase(SessionFactory factory) {
-        Function<SessionByteArray, String> sessionToLongFunction = getSessionToUserNameFunction();
+    public Consumer<TransactionLog<StudyGroup>> getTransactionLogConsumer() {
+        return (transactionLog) -> {
+            CommandExecutionResult res = CommandExecutionResult
+                    .builder()
+                    .code(200)
+                    .object(transactionLog)
+                    .responsePurpose(ResponsePurpose.UPDATE)
+                    .responseType(ResponseType.TRANSACTION_LOG).build();
 
-        StudyGroupDatabase database = new StudyGroupDatabase(factory, sessionToLongFunction);
+            server.getSessionToClientHandlerMap().forEach((session, client) -> {
+                try {
+                    ConnectionHandler connectionHandler = client.getHandler();
+                    connectionHandler.sendResponseBlocking(res);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        };
+    }
+
+    public StudyGroupDatabase createDatabase(SessionFactory factory) {
+        StudyGroupDatabase database = new StudyGroupDatabase(factory, getSessionToUserNameFunction(), getTransactionLogConsumer());
         database.confirmDelete = getConfirmDeleteFunction();
 
         return database;

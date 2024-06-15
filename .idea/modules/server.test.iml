@@ -13,13 +13,10 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../shared/build/libs/shared-1.0-SNAPSHOT.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../bin/shared.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../shared/build/libs/shared-1.0-SNAPSHOT.jar!/" />
-          <root url="jar://$MODULE_DIR$/../../shared/build/libs/shared-1.0-SNAPSHOT.jar!/" />
-        </SOURCES>
+        <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="library" name="Gradle: org.hibernate:hibernate-gradle-plugin:5.6.3.Final" level="project" />

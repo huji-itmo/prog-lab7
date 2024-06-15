@@ -14,7 +14,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")
 
-    implementation(fileTree(mapOf("dir" to "../shared/build/libs", "include" to listOf("*.jar"))))
+    implementation(fileTree(mapOf("dir" to "C:/code/itmo/prog/bin", "include" to listOf("shared.jar"))))
 
     testCompileOnly("org.projectlombok:lombok:1.18.30")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
@@ -24,7 +24,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<Jar>() {
+tasks.withType<Jar> {
     manifest {
         attributes["Main-Class"] = "Main"
     }
@@ -76,7 +76,7 @@ tasks.register<Jar>("export") {
     archiveBaseName.set(project.name)
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     with(tasks.jar.get())
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE;
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     destinationDirectory.set(file("C:/code/itmo/prog/bin"))
 }

@@ -5,7 +5,7 @@ import dataStructs.FormOfEducation;
 import dataStructs.StudyGroup;
 import dataStructs.User;
 import dataStructs.communication.SessionByteArray;
-import database.undo.UndoLog;
+import dataStructs.undo.TransactionLog;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.ObjectNotFoundException;
@@ -18,6 +18,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.criteria.CriteriaQuery;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Getter
@@ -25,17 +26,19 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
     private final SessionFactory factory;
     private final Function<SessionByteArray, String> sessionToUserNameFunction;
+    private final Consumer<TransactionLog<StudyGroup>> onNewTransactionLog;
 
-    Map<SessionByteArray, Stack<UndoLog<StudyGroup>>> undoLogStacksBySession = Collections.synchronizedMap(new HashMap<>());
+    private final Map<SessionByteArray, Stack<TransactionLog<StudyGroup>>> undoLogStacksBySession = Collections.synchronizedMap(new HashMap<>());
 
     private final Collection<StudyGroup> collection = Collections.synchronizedCollection(new ArrayDeque<>());
 
     @Setter
     public ConfirmDeleteInterface<StudyGroup> confirmDelete;
 
-    public StudyGroupDatabase(SessionFactory factory, Function<SessionByteArray, String> sessionToUserNameFunction) {
+    public StudyGroupDatabase(SessionFactory factory, Function<SessionByteArray, String> sessionToUserNameFunction, Consumer<TransactionLog<StudyGroup>> onNewTransactionLog) {
 
         this.sessionToUserNameFunction = sessionToUserNameFunction;
+        this.onNewTransactionLog = onNewTransactionLog;
 
         try (Session session = factory.openSession()) {
 
@@ -82,7 +85,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
         permittedToDelete.forEach(getCollection()::remove);
 
-        pushToUndoStack(UndoLog.deletedElements(elementsToDelete), sessionStr);
+        pushToUndoStack(TransactionLog.deletedElements(elementsToDelete), sessionStr);
     }
 
     /**
@@ -119,7 +122,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
         deleteElements(permittedToDelete);
 
-        pushToUndoStack(UndoLog.deletedElements(elementsToDelete), sessionStr);
+        pushToUndoStack(TransactionLog.deletedElements(elementsToDelete), sessionStr);
 
         return elementsToDelete;
     }
@@ -151,7 +154,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
         getCollection().remove(deleted);
 
-        pushToUndoStack(UndoLog.changedElement(new_element,deleted), sessionStr);
+        pushToUndoStack(TransactionLog.changedElement(new_element, deleted), sessionStr);
 
         return deleted;
     }
@@ -170,7 +173,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
         deleteElements(List.of(deleted));
 
-        pushToUndoStack(UndoLog.deletedElements(deleted),sessionStr);
+        pushToUndoStack(TransactionLog.deletedElements(deleted), sessionStr);
 
         return deleted;
     }
@@ -189,7 +192,7 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
 
         getCollection().add(group);
 
-        pushToUndoStack(UndoLog.addedElements(group), sessionStr);
+        pushToUndoStack(TransactionLog.addedElements(group), sessionStr);
     }
 
 
@@ -208,25 +211,32 @@ public class StudyGroupDatabase implements Database<StudyGroup, Long> {
     @Override
     public boolean popUndoStackWithSession(SessionByteArray session) {
 
-        Stack<UndoLog<StudyGroup>> undoLogsByClient = getUndoLogStacksBySession().get(session);
+        Stack<TransactionLog<StudyGroup>> transactionLogsByClient = getUndoLogStacksBySession().get(session);
 
-        if (undoLogsByClient.isEmpty()) {
+        if (transactionLogsByClient.isEmpty()) {
             return false;
         }
 
-        return undo(undoLogsByClient.pop());
+        return undo(transactionLogsByClient.pop());
     }
 
-    private void pushToUndoStack(UndoLog<StudyGroup> log, SessionByteArray session) {
+    private void pushToUndoStack(TransactionLog<StudyGroup> log, SessionByteArray session) {
         if (log.getChangesList().isEmpty()) {
             return;
         }
         System.out.println("added to stack " + log);
 
         undoLogStacksBySession.get(session).push(log);
+
+        new Timer(true).schedule(new TimerTask() {
+            @Override
+            public void run() {
+                onNewTransactionLog.accept(log);
+            }
+        }, 1000L);
     }
 
-    public boolean undo(UndoLog<StudyGroup> log) throws RuntimeException {
+    public boolean undo(TransactionLog<StudyGroup> log) throws RuntimeException {
         if (undoLogStacksBySession.isEmpty())
             return false;
 

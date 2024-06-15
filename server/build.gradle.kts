@@ -18,7 +18,8 @@ dependencies {
 
     implementation("org.postgresql:postgresql:42.2.8")
 
-    implementation(fileTree(mapOf("dir" to "../shared/build/libs", "include" to listOf("*.jar"))))
+//    implementation(fileTree(mapOf("dir" to "../shared/build/libs", "include" to listOf("*.jar"))))
+    implementation(fileTree(mapOf("dir" to "C:/code/itmo/prog/bin", "include" to listOf("shared.jar"))))
 
     testCompileOnly("org.projectlombok:lombok:1.18.30")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")

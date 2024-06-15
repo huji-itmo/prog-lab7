@@ -3,6 +3,7 @@ package connection;
 import dataStructs.communication.CommandExecutionResult;
 import dataStructs.communication.Request;
 import dataStructs.communication.SessionByteArray;
+import dataStructs.communication.enums.ResponsePurpose;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -70,7 +71,7 @@ public class ConnectionWithServer {
                         continue;
                     }
 
-                    if (oneShotRequest) {
+                    if (oneShotRequest && serverResponse.getResponsePurpose() != ResponsePurpose.UPDATE) {
                         oneShotResponse = serverResponse;
                         synchronized (lock) {
                             lock.notifyAll();
